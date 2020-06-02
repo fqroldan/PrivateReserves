@@ -25,7 +25,7 @@ function SOEres(;
 
 	κ=0.185,		# Scale parameter for Extreme Value default choice shock
 	δ=0.2845,		# Decay rate of government bonds
-
+a 
 	πLH=0.15,		# Transition prob for shock to spreads
 	πHL=0.8,		# Transition prob for shock to spreads
 	ψ=15,			# Inverse exposure of foreigners to domestic shock
