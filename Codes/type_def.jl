@@ -29,6 +29,8 @@ function SOEres(;
 	πLH=0.15,		# Transition prob for shock to spreads
 	πHL=0.8,		# Transition prob for shock to spreads
 	ψ=15,			# Inverse exposure of foreigners to domestic shock
+	θ=.04167,		# Reentry probability
+	ℏ=.4,			# Haircut on default
 
 	ϖ=0.6,			# Relative weight of nontradables
 	η=1/0.83-1,		# Elasticity of substitution btw T and N
@@ -71,20 +73,29 @@ function SOEres(;
 	hp = ones(Nb, Na, Nz, Nϵ, 2) * 0.5
 	output = ones(Nb, Na, Nz, Nϵ, 2) * 0.5
 	CA = ones(Nb, Na, Nz, Nϵ, 2) * 0.5
+	qb = ones(Nb, Na, Nz, Nϵ, 2) * exp(-r)
+	qa = ones(Nb, Na, Nz, Nϵ, 2) * exp(-r)
 
 	repay = ones(Nb, Na, Nz, Nϵ, Nz, Nϵ)
 
 
-	pars = Dict{Symbol, Float64}(:β=>β, :γ=>γ, :κ=>κ, :δ=>δ, :πLH=>πLH, :πHL=>πHL, :ψ=>ψ, :ϖ=>ϖ, :η=>η, :wbar=>wbar, :r=>r, :ρy=>ρy, :σy=>σy, :α=>α)
+	pars = Dict{Symbol, Float64}(:β=>β, :γ=>γ, :κ=>κ, :δ=>δ, :πLH=>πLH, :πHL=>πHL, :ψ=>ψ, :ϖ=>ϖ, :η=>η, :wbar=>wbar, :r=>r, :ρy=>ρy, :σy=>σy, :α=>α, :θ=>θ, :ℏ=>ℏ)
 	opt = Dict{Symbol, Bool}()
-	gr = Dict{Symbol, Vector{Float64}}(:b=>bgrid, :a=>agrid, :z=>zgrid, :ϵ=>ϵgrid)
+	gr = Dict{Symbol, Vector{Float64}}(:b=>bgrid, :a=>agrid, :z=>zgrid, :ϵ=>ϵgrid, :def=>0:1)
 	prob = Dict(:z=>Pz, :ϵ=>Pϵ)
 
 	v = Dict(:R=>R, :D=>D, :V=>V)
 	ϕ = Dict(:a=>ap, :b=>bp, :c=>cc)
 
-	eq = Dict(:cT=>cT, :cN=>cN, :labor=>hp, :output=>output, :CA=>CA)
+	eq = Dict(:cT=>cT, :cN=>cN, :labor=>hp, :output=>output, :CA=>CA, :qb=>qb, :qa=>qa)
 	gov = Dict(:repay => repay)
 
 	return SOEres{4,5,6}(pars, opt, gr, prob, v, ϕ, eq, gov)
 end
+
+N(sr::SOEres, sym) = length(sr.gr[sym])
+
+agg_grid(sr::SOEres) = gridmake(1:N(sr,:b), 1:N(sr,:a), 1:N(sr,:z), 1:N(sr,:ϵ))
+
+price_index(sr::SOEres, pN) = price_index(sr.pars, pN)
+price_index(p::Dict{Symbol,Float64}, pN) = (p[:ϖ] * pN.^(1.0-p[:η]) .+ (1.0-p[:ϖ])).^(1.0/(1.0-p[:η]))
