@@ -1,6 +1,7 @@
 using Printf, Interpolations
 
 function repayment_def(sr::SOEres, qv, jζ, jζp)
+	""" Use future q and reentry/default probs to calculate repayment """
 	θ, κ, δ, ℏ = [sr.pars[sym] for sym in [:θ, :κ, :δ, :ℏ]]
 
 	rep = 0.0
@@ -15,6 +16,7 @@ function repayment_def(sr::SOEres, qv, jζ, jζp)
 end
 
 function prob_def(sr::SOEres, jζ, jζp, repv)
+	""" Use repayment policy and reentry params to calculate prob of default states """
 	rep_prob = 1.0
 	if jζ == 2 # Starting from normal access (ζv == 1)
 		if jζp == 1 # Default probability
@@ -33,6 +35,7 @@ function prob_def(sr::SOEres, jζ, jζp, repv)
 end
 
 function iterate_q(sr::SOEres, itp_q::itp_sr)
+	""" One iteration of the debt price """
 	new_q = zeros(size(sr.eq[:qb]))
 
 	Jgrid = agg_grid(sr)
@@ -63,6 +66,7 @@ function iterate_q(sr::SOEres, itp_q::itp_sr)
 end
 
 function update_q!(sr::SOEres; tol::Float64=1e-6, maxiter::Int64=500, verbose::Bool=true)
+	""" Iterates on the debt price """
 	iter, dist = 0, 1+tol
 	upd_η = 0.75
 
