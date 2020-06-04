@@ -68,7 +68,7 @@ Finally, the value of entering a period with access to markets (and hence an opt
 \paragraph{Foreigners, debt prices}
 Stochastic discount factor
 \begin{align}
-	m(\state, \state') &= \exp(-r - \nu (\psi \epsilon' + 0.5 \kappa^2\sigma_\epsilon^2)) \qquad \epsilon' = \log(y') - \rho\log(y) - (1-\rho)\mu_y\\
+	m(\state, \state') &= \exp(-r - \nu (\psi \epsilon' + 0.5 \psi^2\sigma_\epsilon^2)) \qquad \epsilon' = \log(y') - \rho\log(y) - (1-\rho)\mu_y\\
 	q_a &= \exp(-r) \\
 	q_b(b',a',\state) &= \ex{ m(\state,\state') \left(\mathcal{P}(b',a',\state') (1-\hslash) q_b(b',a',\state') + (1-\mathcal{P}(b',a',\state'))(\delta + (1-\delta)q_b(b',a',\state')) \right) }
 \end{align}
