@@ -1,0 +1,42 @@
+\input{preamble.tex}
+\linespread{1.32} % Line spacing
+
+\def\acknowledgements{}
+
+\title{Reserve Accumulation with a Private IIP\thanks{The views expressed herein are those of the authors and should not be attributed to the IMF, its Executive Board, or its management. \acknowledgements}}
+
+\author{\href{https://fqroldan.github.io}{Francisco Rold\'{a}n}\thanks{e-mail: \href{mailto:froldan@imf.org}{\emph{froldan@imf.org}}}\\IMF \and \href{https://sosapadilla.github.io}{C\'{e}sar Sosa-Padilla}\thanks{e-mail: \href{mailto:csosapad@nd.edu}{\emph{csosapad@nd.edu}}} \\University of Notre Dame,\\ Princeton IES, and NBER}
+
+\ifdefined\ungated
+\else
+\def\ungated{1}
+\fi
+
+\date{\monthname\xspace \the\year %
+% \\Preliminary: Click \href{https://fqroldan.github.io/resources/privres_draft.pdf}{here} for latest version%
+}
+\begin{document}
+
+\ifnum\ungated=1%
+	\maketitle 
+	\begin{abstract}
+		\noindent\input{abstract_privres.txt}
+	\end{abstract}
+	\vfill
+	\noindent\textbf{JEL Classification}\quad F32, F34, F41\\
+	\noindent\textbf{Keywords}\quad International reserves, sovereign default, macroeconomic stabilization, fixed exchange rates, inflation targeting.
+	\bigskip
+	\vfill
+\else
+	\includepdf[pages=-]{cover_imfwp.pdf}
+	\tableofcontents
+\fi
+\pagebreak 
+
+\intro
+
+
+\section{Model}
+
+
+\end{document}

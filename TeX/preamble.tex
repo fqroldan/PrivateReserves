@@ -1,0 +1,271 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[american]{babel}
+\usepackage{amssymb,amsfonts,amsmath,amsthm,amscd,verbatim,latexsym,xspace,mathtools,array,pifont}
+%\usepackage[sfdefault]{FiraSans}
+\usepackage{ifxetex}
+\ifxetex
+	\usepackage[math]{mathspec}
+	\setmainfont[Numbers=OldStyle]{Linux Libertine}
+	\setmathsfont(Latin,Digits){Linux Libertine}
+	\setlength{\parskip}{0.15cm}
+	\linespread{1.3} % Line spacing
+\else
+	\usepackage[osf]{mathpazo}
+	\usepackage{palatino}
+\fi
+
+% \setmainfont[ItalicFont	= Palatino Linotype Italic,
+% 			 BoldFont	= Palatino Linotype Bold]
+% 	{Palatino}
+
+% \setmainfont[SmallCapsFont	= Fontin SmallCaps]{TeX Gyre Pagella}
+% \setmainfont
+%      {STIX Two Text}
+	% \usepackage{mathspec}
+	% \setmathsfont(Digits,Latin,Greek)[Numbers={Lining,Proportional}]{STIX Two Math}
+	%
+	% \let\oldtextsc\textsc
+	% \renewcommand{\textsc}[1]{{\setmainfont[Numbers=OldStyle]{STIX Two Text} \scshape #1}}
+	% \let\oldscshape\scshape
+	% \renewcommand{\scshape}{\setmainfont[Numbers=OldStyle]{STIX Two Text} \oldscshape}
+
+\usepackage{booktabs}
+\usepackage{datetime}
+\usepackage{bbm} %for the sweet indicator function
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{enumerate}
+\usepackage{graphicx}
+\usepackage{etoolbox}
+\usepackage{listings} % Required for insertion of code
+%\usepackage{courier} % Required for the courier font
+\usepackage{makeidx}
+\usepackage[left=2.0cm,right=2.0cm,top=1in,bottom=1in,nomarginpar,bindingoffset=0cm,centering]{geometry}
+%\usepackage{paralist} % Used for the compactitem environment which makes bullet points with less space between them
+\usepackage{caption}
+\usepackage{subcaption}
+\captionsetup[table]{labelfont=sc,textfont=sc}
+\captionsetup[figure]{labelfont=sc,textfont=sc}
+
+\usepackage{titlesec} % Allows customization of titles
+%\renewcommand\thesection{\Roman{section}} % Roman numerals for the sections
+%\renewcommand\thesubsection{\Alph{subsection}} % Roman numerals for subsections
+\titleformat{\section}[block]{\large\scshape\centering}{\thesection.}{1em}{} % Change the look of the section titles
+\titleformat{\subsection}[block]{\large\itshape}{\thesubsection\xspace}{1em}{} % Change the look of the section titles
+
+\usepackage{fancyhdr} % Custom headers and footers
+\pagestyle{fancyplain} % Makes all pages in the document conform to the custom headers and footers
+\fancyhead{} % No page header - if you want one, create it in the same way as the footers below
+\fancyfoot[L]{} % Empty left footer
+\fancyfoot[C]{} % Empty center footer
+\fancyfoot[R]{\thepage} % Page numbering for right footer
+\renewcommand{\headrulewidth}{0pt} % Remove header underlines
+\renewcommand{\footrulewidth}{0pt} % Remove footer underlines
+\setlength{\headheight}{10pt} % Customize the height of the header
+\usepackage[authoryear]{natbib}
+
+%\numberwithin{equation}{section}
+%\numberwithin{table}{section}
+\definecolor{nyupurple}{HTML}{57068C}
+\definecolor{imfblue}{HTML}{004c97}
+\definecolor{DarkTeal}{HTML}{08282e}
+
+\newcommand{\dem}[2] {\bigskip \indent \textbf{Proof of #1 }#2 \hfill $\square$}
+\def\gt{>}
+\def\lt{<}
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+\def\w{\omega}
+\def\f{\varphi}
+\def\s{\sigma}
+\def\g{\gamma}
+\def\subjectto{\quad \text{ subject to } \quad}
+\newcommand{\real}{\mathbb{R}}
+\newcommand{\nat}{\mathbb{N}}
+\newcommand{\der}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\pfrac}[2]{\left( \frac{#1}{#2} \right)}
+\newcommand{\prob}[2][{}]{\mathbb{P}_{#1}\left( #2 \right)}
+\newcommand{\ex}[2][{}]{\mathbb{E}_{#1}\left[ #2 \right]}
+\newcommand{\var}[2][{}]{\text{var}_{#1}\left( #2 \right)}
+\newcommand{\ent}[1]{\text{ent}\left( #1 \right)}
+\newcommand{\alert}[1]{{\color{red!75!black}#1}}
+\newcommand{\note}[1]{\emph{Note:} {\color{red!60!black}#1}}
+\newcommand{\noopsort}[2]{#2}
+\newcommand{\intro}[1][{Introduction}]{\addtocounter{section}{+1} \section*{{#1}}}
+\newcommand{\red}[1]{{\color{red} #1}}
+\def\rd{R\&D\xspace}
+\def\ind{\mathbbm{1}}
+\def\inv{{-1}}
+\def\mc{\mathtt{mc}}
+\def\NFA{\mathtt{NFA}}
+\def\nfa{\mathtt{nfa}}
+\def\haircut{\hslash}
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}}
+
+
+\def\a{\alpha}
+\def\b{\beta}
+\def\de{\delta}
+\def\De{\Delta}
+\def\g{\gamma}
+\def\G{\Gamma}
+\def\eps{\varepsilon}
+\def\ups{\upsilon}
+\def\Ups{\Upsilon}
+\def\sg{\sigma}
+\def\Sg{\Sigma}
+\def\lm{\lambda}
+\def\Lm{\Lambda}
+\def\th{\theta}
+\def\Th{\Theta}
+\def\om{\omega}
+\def\Om{\Omega}
+\def\vphi{\varphi}
+
+\def\re{\mathbb{R}} %real numbers
+\def\intg{\mathbb{Z}} %integers
+\def\prob{\mathbb{P}} %probability
+\def\e{\mathbb{E}} %expectation
+\def\n{\mathbb{N}} %natural numbers
+\def\ind{\mathbbm{1}} %sweet indicator function
+\def\pref{\succsim} %preference relation "at least as good as"
+\def\spref{\succ} % strict preference relation
+\def\notpref{\precsim}
+\def\snotpref{\prec}
+\def\indiff{\sim} %indifference/equivalence relation/distributed as
+
+\def\mb{\mathbb}
+\def\mbm{\mathbbm}
+\def\mbf{\mathbf}
+\def\tbf{\textbf}
+\def\mc{\mathcal}
+\def\d{\displaystyle}
+\def\dsum{\displaystyle\sum}
+\def\dprod{\displaystyle\prod}
+\def\dsup{\displaystyle\sup}
+\def\dinf{\displaystyle\inf}
+\def\dlim{\displaystyle\lim}
+\def\dliminf{\displaystyle\liminf}
+\def\dlimsup{\displaystyle\limsup}
+\def\oline{\overline}
+\def\ol{\overline}
+\def\uline{\underline}
+\def\ul{\underline}
+\def\dcup{\displaystyle\bigcup}
+\def\dcap{\displaystyle\bigcap}
+\def\dmax{\displaystyle\max}
+\def\dmin{\displaystyle\min}
+\def\l{\left}
+\def\r{\right}
+\def\la{\langle}
+\def\ra{\rangle}
+\def\pr{\operatorname{Pr}}
+\def\var{\operatorname{Var}}
+\def\cov{\operatorname{Cov}}
+\newcommand*{\argmax}{\operatornamewithlimits{argmax}\limits}
+\newcommand*{\argmin}{\operatornamewithlimits{argmin}\limits}
+%\def\argmin{\operatorname{argmin}}
+%\def\argmax{\mathop{\argmax}}
+%\def\dargmax{\displaystyle\argmax}
+\def\cond{ \ \big| \ }
+\def\w{\wedge}
+\def\s1n{\sum_{i=1}^n}
+\def\ds1n{\dsum_{i=1}^n}
+\def\fr{\frac}
+\def\goesas{\xrightarrow}
+\def\goes{\rightarrow}
+\def\gogo{\rightrightarrows}
+\def\borel{\mc{B}(\re)}
+\def\boreln{\mc{B}(\re^n)}
+\def\intsc{\cap}
+\def\dintsc{\dcap}
+\def\union{\cup}
+\def\dunion{\dcup}
+\def\land{\wedge} %logical and
+\def\lor{\vee} %logical or
+
+%because \underaccent is defined while \overaccent is not...
+\newcommand{\overaccent}[2]{\ensuremath{\accentset{\text{\tiny #1}}{\text{#2}}}}
+%!!! use math mode inside
+
+\def\sign{\operatorname{sign}}
+\def\dom{\operatorname{dom}} %domain
+\def\dim{\operatorname{dim}}
+\def\spn{\operatorname{span}}
+\def\det{\operatorname{det}}
+\def\co{\operatorname{co}}
+\def\aff{\operatorname{aff}}
+\def\ri{\operatorname{ri}}
+\def\cav{\operatorname{cav}} %concavification, yeah
+\def\vex{\operatorname{vex}} %convexification, yeah
+
+%\def\bah{\begin{align*}}
+%\def\maamu{\end{align*}}
+\def\bthm{\begin{theorem}}
+\def\ethm{\end{theorem}}
+\def\bdefn{\begin{definition}}
+\def\edefn{\end{definition}}
+\def\bprop{\begin{proposition}}
+\def\eprop{\end{proposition}}
+\def\bprob{\begin{problem}}
+\def\eprob{\end{problem}}
+\def\bprf{\begin{proof}}
+\def\eprf{\end{proof}}
+\def\bcor{\begin{corollary}}
+\def\ecor{\end{corollary}}
+\def\bconj{\begin{conjecture}}
+\def\econj{\end{conjecture}}
+\def\bexer{\begin{exercise}}
+\def\eexer{\end{exercise}}
+\def\bexam{\begin{example}}
+\def\eexam{$\hfill\blacksquare$\end{example}}
+\def\bnot{\begin{notation}}
+\def\enot{\end{notation}}
+\def\blemma{\begin{lemma}}
+\def\elemma{\end{lemma}}
+\def\bclaim{\begin{claim}}
+\def\eclaim{\end{claim}}
+\def\brem{\begin{remark}}
+\def\erem{\end{remark}}
+\def\bremark{\begin{remark}}
+\def\eremark{\end{remark}}
+\def\bfact{\begin{fact}}
+\def\efact{\end{fact}}
+\def\bass{\begin{assumption}}
+\def\eass{\end{assumption}}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows}
+\tikzstyle{block} = [rectangle, draw, fill=blue!20, 
+    text width=10em, text centered, rounded corners, minimum height=4em]
+\tikzstyle{line} = [draw, -latex']
+\usetikzlibrary{arrows, decorations.markings}
+      \tikzstyle{vecArrow} = [thick, decoration={markings,mark=at position
+      1 with {\arrow[semithick]{open triangle 60}}},
+      double distance=1.4pt, shorten >= 5.5pt,
+      preaction = {decorate},
+      postaction = {draw,line width=1.4pt, white,shorten >= 4.5pt}]
+     \tikzstyle{innerWhite} = [semithick, white,line width=1.4pt, shorten >= 4.5pt]
+\usetikzlibrary{positioning}
+
+\newcommand*\mycirc[1]{%
+	\begin{tikzpicture}[baseline=(C.base)]
+		\node[draw,circle,inner sep=1pt](C) {#1};
+	\end{tikzpicture}}
+
+\newtheorem{lemma}{Lemma}
+
+\usepackage[pdfstartview=FitH]{hyperref}
+\hypersetup{
+    colorlinks	= true,
+    linkcolor	= blue!75!black,
+    urlcolor	= blue!50!black,
+    citecolor 	= blue!75!black
+}
+
+
+\makeatletter
+\patchcmd{\@bibitem}{\ignorespaces}{\label{bib-#1}\ignorespaces}{}{}\makeatother
+\newcommand{\mycite}[1]{[\ref{bib-#1}]}
+\newcommand{\myqcite}[2]{[\ref{bib-#2}, #1]}
+\newcommand{\mytcite}[1]{\texorpdfstring{\cite{#1}}{\mycite{#1}}}
+\newcommand{\mytqcite}[2]{\texorpdfstring{\citep[#1][]{#2}}{\myqcite{#1}{#2}}}
