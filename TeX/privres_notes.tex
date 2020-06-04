@@ -33,10 +33,63 @@
 \fi
 \pagebreak 
 
-\intro
+% \intro
 
 
 \section{Model}
 
+\paragraph{Government choices}
+
+Main problem in repayment
+\begin{align}
+	V^R(b,a,\state) = \max_{b',a',c_T, h} &\; u(c_T, F(h)) + \beta \ex{\mathcal{V}\left(b',a',\state'\right)} \\
+	\text{subject to }
+	& c_T + q_a a' + \delta b = a + y_T(\state) + q_b(b',a',\state) (b' - (1-\delta) b) \notag\\
+	& h \leq \mathcal{H}(c_T, \bar{w}) \notag
+\end{align}
+
+Main problem in default
+\begin{align}
+	V^D(b,a,\state) = \max_{a',c_T, h} &\; u(c_T, F(h)) + \beta \ex{ \theta \mathcal{V}(b,a',\state') + (1-\theta) V^D(b,a',\state) } \\
+	\text{subject to }
+	& c_T + q_a a' = a + \mathcal{D}(y_T(\state)) \notag \\
+	& h \leq \mathcal{H}(c_T, \bar{w}) \notag
+\end{align}
+
+Extreme value preference-for-default shocks yields a default probability
+\begin{align}
+	\mathcal{P}(b,a,\state) = \frac{ \exp(V^D((1-\hslash)b,a,\state) / \kappa) }{\exp(V^D((1-\hslash)b,a,\state) / \kappa) + \exp(V^R(b,a,\state) / \kappa)}
+\end{align}
+
+Finally, the value of entering a period with access to markets (and hence an option to default) is
+\begin{align}
+	\mathcal{V}(b,a,\state) = (1-\mathcal{P}(b,a,\state)) V^R(b,a,\state) + \mathcal{P}(b,a,\state) V^D((1-\hslash)b,a,\state)
+\end{align}
+
+\paragraph{Foreigners, debt prices}
+Stochastic discount factor
+\begin{align}
+	m(\state, \state') &= \exp(-r - \nu (\psi \epsilon' + 0.5 \kappa^2\sigma_\epsilon^2)) \qquad \epsilon' = \log(y') - \rho\log(y) - (1-\rho)\mu_y\\
+	q_a &= \exp(-r) \\
+	q_b(b',a',\state) &= \ex{ m(\state,\state') \left(\mathcal{P}(b',a',\state') (1-\hslash) q_b(b',a',\state') + (1-\mathcal{P}(b',a',\state'))(\delta + (1-\delta)q_b(b',a',\state')) \right) }
+\end{align}
+
+\paragraph{Private economy}
+Preferences
+\begin{align}
+	u(c_T,c_N) = \left[ \varpi_N c_N^{-\eta} + \varpi_T c_T^{-\eta} \right]^{-\frac{1}{\eta}}
+\end{align}
+for $\varpi_N + \varpi_T = 1$.
+
+Production and default costs
+\begin{align}
+	y_N(h) &= h^\alpha \\
+	\mathcal{D}(y) &= y (1-\Delta)
+\end{align}
+
+Wage rigidities
+\begin{align}
+	h \leq \mathcal{H}(c_T, \bar{w}) \qquad\qquad \mathcal{H}(c_T, \bar{w}) = \left(\frac{\varpi_N}{\varpi_T} \frac{\alpha}{\bar{w}}\right)^\frac{1}{1+\alpha\eta} c_T^\frac{1+\eta}{1+\alpha\eta}
+\end{align}
 
 \end{document}

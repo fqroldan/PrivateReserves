@@ -14,21 +14,6 @@
 	\usepackage{palatino}
 \fi
 
-% \setmainfont[ItalicFont	= Palatino Linotype Italic,
-% 			 BoldFont	= Palatino Linotype Bold]
-% 	{Palatino}
-
-% \setmainfont[SmallCapsFont	= Fontin SmallCaps]{TeX Gyre Pagella}
-% \setmainfont
-%      {STIX Two Text}
-	% \usepackage{mathspec}
-	% \setmathsfont(Digits,Latin,Greek)[Numbers={Lining,Proportional}]{STIX Two Math}
-	%
-	% \let\oldtextsc\textsc
-	% \renewcommand{\textsc}[1]{{\setmainfont[Numbers=OldStyle]{STIX Two Text} \scshape #1}}
-	% \let\oldscshape\scshape
-	% \renewcommand{\scshape}{\setmainfont[Numbers=OldStyle]{STIX Two Text} \oldscshape}
-
 \usepackage{booktabs}
 \usepackage{datetime}
 \usepackage{bbm} %for the sweet indicator function
@@ -70,14 +55,8 @@
 \definecolor{DarkTeal}{HTML}{08282e}
 
 \newcommand{\dem}[2] {\bigskip \indent \textbf{Proof of #1 }#2 \hfill $\square$}
-\def\gt{>}
-\def\lt{<}
 \newcommand{\cmark}{\ding{51}}%
 \newcommand{\xmark}{\ding{55}}%
-\def\w{\omega}
-\def\f{\varphi}
-\def\s{\sigma}
-\def\g{\gamma}
 \def\subjectto{\quad \text{ subject to } \quad}
 \newcommand{\real}{\mathbb{R}}
 \newcommand{\nat}{\mathbb{N}}
@@ -92,146 +71,15 @@
 \newcommand{\noopsort}[2]{#2}
 \newcommand{\intro}[1][{Introduction}]{\addtocounter{section}{+1} \section*{{#1}}}
 \newcommand{\red}[1]{{\color{red} #1}}
-\def\rd{R\&D\xspace}
 \def\ind{\mathbbm{1}}
-\def\inv{{-1}}
 \def\mc{\mathtt{mc}}
 \def\NFA{\mathtt{NFA}}
 \def\nfa{\mathtt{nfa}}
 \def\haircut{\hslash}
 \newcommand{\horrule}[1]{\rule{\linewidth}{#1}}
+\def\state{\text{\textbf{s}}}
+\def\State{\text{\textbf{S}}}
 
-
-\def\a{\alpha}
-\def\b{\beta}
-\def\de{\delta}
-\def\De{\Delta}
-\def\g{\gamma}
-\def\G{\Gamma}
-\def\eps{\varepsilon}
-\def\ups{\upsilon}
-\def\Ups{\Upsilon}
-\def\sg{\sigma}
-\def\Sg{\Sigma}
-\def\lm{\lambda}
-\def\Lm{\Lambda}
-\def\th{\theta}
-\def\Th{\Theta}
-\def\om{\omega}
-\def\Om{\Omega}
-\def\vphi{\varphi}
-
-\def\re{\mathbb{R}} %real numbers
-\def\intg{\mathbb{Z}} %integers
-\def\prob{\mathbb{P}} %probability
-\def\e{\mathbb{E}} %expectation
-\def\n{\mathbb{N}} %natural numbers
-\def\ind{\mathbbm{1}} %sweet indicator function
-\def\pref{\succsim} %preference relation "at least as good as"
-\def\spref{\succ} % strict preference relation
-\def\notpref{\precsim}
-\def\snotpref{\prec}
-\def\indiff{\sim} %indifference/equivalence relation/distributed as
-
-\def\mb{\mathbb}
-\def\mbm{\mathbbm}
-\def\mbf{\mathbf}
-\def\tbf{\textbf}
-\def\mc{\mathcal}
-\def\d{\displaystyle}
-\def\dsum{\displaystyle\sum}
-\def\dprod{\displaystyle\prod}
-\def\dsup{\displaystyle\sup}
-\def\dinf{\displaystyle\inf}
-\def\dlim{\displaystyle\lim}
-\def\dliminf{\displaystyle\liminf}
-\def\dlimsup{\displaystyle\limsup}
-\def\oline{\overline}
-\def\ol{\overline}
-\def\uline{\underline}
-\def\ul{\underline}
-\def\dcup{\displaystyle\bigcup}
-\def\dcap{\displaystyle\bigcap}
-\def\dmax{\displaystyle\max}
-\def\dmin{\displaystyle\min}
-\def\l{\left}
-\def\r{\right}
-\def\la{\langle}
-\def\ra{\rangle}
-\def\pr{\operatorname{Pr}}
-\def\var{\operatorname{Var}}
-\def\cov{\operatorname{Cov}}
-\newcommand*{\argmax}{\operatornamewithlimits{argmax}\limits}
-\newcommand*{\argmin}{\operatornamewithlimits{argmin}\limits}
-%\def\argmin{\operatorname{argmin}}
-%\def\argmax{\mathop{\argmax}}
-%\def\dargmax{\displaystyle\argmax}
-\def\cond{ \ \big| \ }
-\def\w{\wedge}
-\def\s1n{\sum_{i=1}^n}
-\def\ds1n{\dsum_{i=1}^n}
-\def\fr{\frac}
-\def\goesas{\xrightarrow}
-\def\goes{\rightarrow}
-\def\gogo{\rightrightarrows}
-\def\borel{\mc{B}(\re)}
-\def\boreln{\mc{B}(\re^n)}
-\def\intsc{\cap}
-\def\dintsc{\dcap}
-\def\union{\cup}
-\def\dunion{\dcup}
-\def\land{\wedge} %logical and
-\def\lor{\vee} %logical or
-
-%because \underaccent is defined while \overaccent is not...
-\newcommand{\overaccent}[2]{\ensuremath{\accentset{\text{\tiny #1}}{\text{#2}}}}
-%!!! use math mode inside
-
-\def\sign{\operatorname{sign}}
-\def\dom{\operatorname{dom}} %domain
-\def\dim{\operatorname{dim}}
-\def\spn{\operatorname{span}}
-\def\det{\operatorname{det}}
-\def\co{\operatorname{co}}
-\def\aff{\operatorname{aff}}
-\def\ri{\operatorname{ri}}
-\def\cav{\operatorname{cav}} %concavification, yeah
-\def\vex{\operatorname{vex}} %convexification, yeah
-
-%\def\bah{\begin{align*}}
-%\def\maamu{\end{align*}}
-\def\bthm{\begin{theorem}}
-\def\ethm{\end{theorem}}
-\def\bdefn{\begin{definition}}
-\def\edefn{\end{definition}}
-\def\bprop{\begin{proposition}}
-\def\eprop{\end{proposition}}
-\def\bprob{\begin{problem}}
-\def\eprob{\end{problem}}
-\def\bprf{\begin{proof}}
-\def\eprf{\end{proof}}
-\def\bcor{\begin{corollary}}
-\def\ecor{\end{corollary}}
-\def\bconj{\begin{conjecture}}
-\def\econj{\end{conjecture}}
-\def\bexer{\begin{exercise}}
-\def\eexer{\end{exercise}}
-\def\bexam{\begin{example}}
-\def\eexam{$\hfill\blacksquare$\end{example}}
-\def\bnot{\begin{notation}}
-\def\enot{\end{notation}}
-\def\blemma{\begin{lemma}}
-\def\elemma{\end{lemma}}
-\def\bclaim{\begin{claim}}
-\def\eclaim{\end{claim}}
-\def\brem{\begin{remark}}
-\def\erem{\end{remark}}
-\def\bremark{\begin{remark}}
-\def\eremark{\end{remark}}
-\def\bfact{\begin{fact}}
-\def\efact{\end{fact}}
-\def\bass{\begin{assumption}}
-\def\eass{\end{assumption}}
 
 \usepackage{tikz}
 \usetikzlibrary{shapes,arrows}
