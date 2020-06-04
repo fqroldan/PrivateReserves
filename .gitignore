@@ -4,6 +4,5 @@
 /TeX/*.fls
 /TeX/*.log
 /TeX/*.out
-/TeX/*.pdf
 /TeX/*.synctex.gz
 /TeX/*.xdv
