@@ -3,7 +3,7 @@ using QuantEcon, Interpolations, Optim, Dates, Printf, Random, JLD, PlotlyJS, Co
 
 include("type_def.jl")
 include("handle_itps.jl")
-include("debtprice.jl")
+include("comp_eqm.jl")
 include("planner.jl")
 include("reporting_routines.jl")
 

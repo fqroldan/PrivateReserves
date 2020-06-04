@@ -301,6 +301,8 @@ function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=f
 		end
 	end
 
+	update_eqm!(sr)
+
 	if dist <= tol
 		s = "Converged in $iter iterations (total time = $(time_print(time()-t0)))\n"
 	else

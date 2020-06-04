@@ -112,20 +112,45 @@ function update_q!(sr::SOEres; tol::Float64=1e-6, maxiter::Int64=500, verbose::B
 	nothing
 end
 
-
-function update_rep!(sr::SOEres)
-	""" Updates the repayment probability given (S_t, z_{t+1}, ν_{t+1}) """
+function update_eqm!(sr::SOEres)
 	itp_def = make_itp(sr, sr.v[:def])
+	itp_q = make_itp(sr, sr.eq[:qb])
 
 	Jgrid = agg_grid(sr)
-	jζ = 2 # Default choice at t+1 only if normal access at t
-	for jj in 1:size(Jgrid,1)
-		js = Jgrid[jj,:]
-		bpv, apv = [sr.ϕ[key][js...,jζ] for key in [:b, :a]]
-		for (jzp, zpv) in enumerate(sr.gr[:z]), (jνp, νpv) in enumerate(sr.gr[:ν])
-			def_prob = max(0,min(1,itp_def(bpv, apv, zpv, νpv)))
-			sr.gov[:repay][js...,jzp,jνp] = 1 - def_prob
+	Threads.@threads for js in 1:size(Jgrid,1)
+		jv = Jgrid[js, :]
+		jd = S_index(sr, jv)
+		
+		state = S(sr, jv)
+		zv = state[:z]
+		νv = state[:ν]
+		pz = sr.prob[:z][jd[:z],:]
+		pν = sr.prob[:ν][jd[:ν],:]
+
+		for jζ in 1:2
+			ζv = sr.gr[:def][jζ]
+			jdef = def_state(sr, jζ)
+
+			bp, ap = [sr.ϕ[key][jv..., jζ] for key in [:b, :a]]
+
+			cT = budget_constraint_T(sr, state, pz, pν, bp, ap, itp_def, itp_q, jdef)
+			hp = eq_h(sr, cT)
+			yN = prod_N(sr, hp)
+			yT = output_T(sr, state, jdef)
+
+			output = CES_aggregator(sr, yT, yN)
+			CA = yT - cT
+
+			new_eq = Dict([(:cT,cT), (:cN,yN), (:output,output), (:labor,hp), (:CA,CA)])
+			for (key, val) in new_eq
+				if haskey(sr.eq, key)
+					sr.eq[key][jv..., jζ] = val
+				end
+			end
 		end
 	end
-	nothing
 end
+
+
+
+
