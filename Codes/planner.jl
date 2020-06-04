@@ -169,12 +169,6 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 	return ϕ, vD
 end
 
-function prob_extreme_value(sr::SOEres, vR, vD)
-	""" Apply extreme-value shocks formula """
-	κ = sr.pars[:κ]
-	return exp(vR/κ) / (exp(vR/κ) + exp(vD/κ))
-end
-
 function solve_optvalue(sr::SOEres, itp_v, itp_vd, itp_def, itp_q)
 	""" Loop over states and solve """
 	new_v = Dict(key => similar(val) for (key, val) in sr.v)
@@ -200,8 +194,6 @@ function solve_optvalue(sr::SOEres, itp_v, itp_vd, itp_def, itp_q)
 		prob_rep = prob_extreme_value(sr, vR, vD)
 
 		""" Save new values """
-		new_v[:def][jv...] = 1-prob_rep
-		new_v[:V][jv...] = prob_rep * vR + (1-prob_rep) * vD
 		new_v[:D][jv...] = vD
 		new_v[:R][jv...] = vR
 		for key in keys(sr.ϕ)
@@ -218,6 +210,34 @@ function solve_optvalue(sr::SOEres, itp_v, itp_vd, itp_def, itp_q)
 	return new_v, new_ϕ
 end
 
+function prob_extreme_value(sr::SOEres, vR, vD)
+	""" Apply extreme-value shocks formula """
+	κ = sr.pars[:κ]
+	return exp(vD/κ) / (exp(vR/κ) + exp(vD/κ))
+end
+
+function update_def!(sr::SOEres, new_v)
+	""" Computes default prob and value of entering period in repayment """
+	itp_vd = make_itp(sr,new_v[:D]);
+	ℏ = sr.pars[:ℏ]
+
+	Jgrid = agg_grid(sr);
+	for js in 1:size(Jgrid,1)
+		jv = Jgrid[js,:]
+
+		state = S(sr, jv)
+		bv, av, zv, νv = [state[key] for key in [:b,:a,:z,:ν]]
+
+		vR = new_v[:R][jv...]
+		vD = itp_vd((1-ℏ)*bv, av, zv, νv)
+
+		def_prob = prob_extreme_value(sr,vR,vD)
+
+		new_v[:def][jv...] = def_prob
+		new_v[:V][jv...] = def_prob * vD + (1-def_prob) * vR
+	end
+end
+
 function vfi_iter(sr::SOEres)
 	""" Interpolate values and prices to use as next period values """
 	itp_v  = make_itp(sr, sr.v[:V]);
@@ -225,7 +245,10 @@ function vfi_iter(sr::SOEres)
 	itp_def = make_itp(sr, sr.v[:def]);
 	itp_q  = make_itp(sr, sr.eq[:qb]);
 
-	new_v, new_ϕ = solve_optvalue(sr, itp_v, itp_vd, itp_def, itp_q)
+	new_v, new_ϕ = solve_optvalue(sr, itp_v, itp_vd, itp_def, itp_q);
+	update_def!(sr, new_v)
+
+	return new_v, new_ϕ
 end
 
 function update_sr!(y, new_y)
