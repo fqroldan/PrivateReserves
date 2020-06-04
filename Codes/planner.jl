@@ -92,6 +92,9 @@ function value(sr::SOEres, state, pz, pν, bp, ap, itp_v, itp_vd, itp_def, itp_q
 	""" Computes V given state and choices of consumption, debt, reserves """
 	θ, ℏ, β = [sr.pars[sym] for sym in [:θ, :ℏ, :β]]
 
+	# bp = max(bp, minimum(sr.gr[:b]))
+	# bp = min(bp, maximum(sr.gr[:b]))
+
 	c = budget_constraint_agg(sr, state, pz, pν, bp, ap, itp_def, itp_q, jdef)
 	ut = utility(sr, c)
 
@@ -111,7 +114,7 @@ function value(sr::SOEres, state, pz, pν, bp, ap, itp_v, itp_vd, itp_def, itp_q
 end
 
 function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q)
-	""" Choose ap ≥ 0, bp ≤ 0 default with prob sr.gov[:repay] """
+	""" Choose ap ≥ 0, bp ≥ 0 default with prob sr.gov[:repay] """
 	jζ = 2 # IN REPAYMENT
 	jdef = def_state(sr, jζ)
 	jdef == false || throw(error("Wrong default state"))
@@ -167,36 +170,40 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 end
 
 function prob_extreme_value(sr::SOEres, vR, vD)
+	""" Apply extreme-value shocks formula """
 	κ = sr.pars[:κ]
 	return exp(vR/κ) / (exp(vR/κ) + exp(vD/κ))
 end
 
 function solve_optvalue(sr::SOEres, itp_v, itp_vd, itp_def, itp_q)
+	""" Loop over states and solve """
 	new_v = Dict(key => similar(val) for (key, val) in sr.v)
 	new_ϕ = Dict(key => similar(val) for (key, val) in sr.ϕ)
 
 	Jgrid = agg_grid(sr)
 	Threads.@threads for js in 1:size(Jgrid,1)
 		jv = Jgrid[js,:]
-		jb, ja, jz, jν = jv
 
+		jd = S_index(sr, jv)
 		state = S(sr, jv)
 
-		pz = sr.prob[:z][jz,:]
-		pν = sr.prob[:ν][jν,:]
+		pz = sr.prob[:z][jd[:z],:]
+		pν = sr.prob[:ν][jd[:ν],:]
 
 		guess = Dict(key => val[jv...,:] for (key,val) in sr.ϕ)
-		ϕR, vR = opt_value_R(sr, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q)
 
+		""" New choices and values in repayment and default """
+		ϕR, vR = opt_value_R(sr, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q)
 		ϕD, vD = opt_value_D(sr, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q)
 
+		""" Repayment probability as function of values """
 		prob_rep = prob_extreme_value(sr, vR, vD)
 
+		""" Save new values """
 		new_v[:def][jv...] = 1-prob_rep
 		new_v[:V][jv...] = prob_rep * vR + (1-prob_rep) * vD
 		new_v[:D][jv...] = vD
 		new_v[:R][jv...] = vR
-
 		for key in keys(sr.ϕ)
 			for jζ in 1:2
 				if def_state(sr, jζ)
@@ -212,6 +219,7 @@ function solve_optvalue(sr::SOEres, itp_v, itp_vd, itp_def, itp_q)
 end
 
 function vfi_iter(sr::SOEres)
+	""" Interpolate values and prices to use as next period values """
 	itp_v  = make_itp(sr, sr.v[:V]);
 	itp_vd = make_itp(sr, sr.v[:D]);
 	itp_def = make_itp(sr, sr.v[:def]);
@@ -239,6 +247,7 @@ function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=f
 		iter += 1
 
 		old_q = copy(sr.eq[:qb])
+		""" Update debt prices (for use as next period prices) """
 		update_q!(sr, verbose = false)
 		dist_q = sum( (sr.eq[:qb]-old_q).^2 ) / sum(old_q.^2)
 
@@ -246,6 +255,7 @@ function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=f
 		old_ϕ = copy(sr.ϕ)
 
 		t1 = time()
+		""" Iterate on the value functions """
 		new_v, new_ϕ = vfi_iter(sr)
 		t = time() - t1
 

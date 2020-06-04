@@ -47,13 +47,14 @@ function iterate_q(sr::SOEres, itp_q, itp_def)
 	Jgrid = agg_grid(sr)
 	Threads.@threads for js in 1:size(Jgrid,1)
 		jv = Jgrid[js, :]
-		jb, ja, jz, jν = jv
+		jd = S_index(sr, jv)
 		
-		zv = sr.gr[:z][jz]
-		νv = sr.gr[:ν][jν]
+		state = S(sr, jv)
+		zv = state[:z]
+		νv = state[:ν]
 
-		pz = sr.prob[:z][jz,:]
-		pν = sr.prob[:ν][jν,:]
+		pz = sr.prob[:z][jd[:z],:]
+		pν = sr.prob[:ν][jd[:ν],:]
 
 		for jζ in 1:2
 			bpv = sr.ϕ[:b][jv...,jζ]

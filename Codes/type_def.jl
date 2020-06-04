@@ -98,7 +98,13 @@ end
 N(sr::SOEres, sym) = length(sr.gr[sym])
 
 agg_grid(sr::SOEres) = gridmake(1:N(sr,:b), 1:N(sr,:a), 1:N(sr,:z), 1:N(sr,:ν))
-S(sr::SOEres, jvec)  = Dict(sym => sr.gr[sym][jvec[jj]] for (jj, sym) in enumerate([:b, :a, :z, :ν]))
+
+statenames(sr::SOEres) = [:b,:a,:z,:ν]
+
+S(sr::SOEres, jvec)  = Dict(sym => sr.gr[sym][jvec[jj]] for (jj, sym) in enumerate(statenames(sr)))
+S_index(sr::SOEres, jvec) = Dict(sym => [jvec[jj]] for (jj, sym) in enumerate(statenames(sr)))
+S_vec(sr::SOEres, s) = [s[key] for key in statenames(sr)]
+
 
 def_state(sr::SOEres, jζ::Int64) = (jζ == 1)
 
