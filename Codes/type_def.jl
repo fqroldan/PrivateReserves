@@ -1,6 +1,6 @@
 using QuantEcon
 
-mutable struct SOEres{K, Kd, Ktot}
+mutable struct SOEres{K, Kd}
 	pars::Dict{Symbol, Float64}
 	opt::Dict{Symbol, Bool}
 	gr::Dict{Symbol, Vector{Float64}}
@@ -66,6 +66,8 @@ function SOEres(;
 	V = zeros(Nb, Na, Nz, Nν)
 	def = zeros(Nb, Na, Nz, Nν)
 
+	K = length(size(R))
+
 	bp = ones(Nb, Na, Nz, Nν, 2) * 0.5
 	ap = ones(Nb, Na, Nz, Nν, 2) * 0.5
 	cc = ones(Nb, Na, Nz, Nν, 2) * 0.5
@@ -92,7 +94,7 @@ function SOEres(;
 	eq = Dict(:cT=>cT, :cN=>cN, :labor=>hp, :output=>output, :CA=>CA, :qb=>qb, :qa=>qa)
 	# gov = Dict(:repay => repay)
 
-	return SOEres{4,5,6}(pars, opt, gr, prob, v, ϕ, eq)#, gov)
+	return SOEres{K,K+1}(pars, opt, gr, prob, v, ϕ, eq)#, gov)
 end
 
 N(sr::SOEres, sym) = length(sr.gr[sym])
