@@ -26,6 +26,13 @@ paper = let
 	Style(def_style, layout=layout)
 end
 
+contsty(;div::Bool=false) = let
+	colpal = ifelse(div, ColorSchemes.oleron, ColorSchemes.lajolla)
+	colscale = [[vv, get(colpal, vv)] for vv in range(0,1,length=100)]
+	c_att = attr(colorscale=colscale, autocontour=false)
+	Style(trace=Dict(:contour=>c_att))
+end
+
 default_eval_points(sr::SOEres) = floor(Int, N(sr,:b)*0.5), floor(Int, N(sr,:a)*0.5), floor(Int, N(sr,:z)*0.5), floor(Int, N(sr,:ν)*0.5)
 
 function grab_vec(sr::SOEres, y::Array{Float64,K}, key::Symbol, jζ=2) where K
@@ -104,7 +111,7 @@ function make_contour(sr::SOEres, srd::Dict, zkey::Symbol, xkey::Symbol, ykey::S
 	return plot(data, style=style, layout)
 end
 
-function make_comp_V(sr::SOEres, xkey::Symbol; style::Style=slides_def)
+function make_comp_V(sr::SOEres, xkey::Symbol, ykey::Symbol=:nothing; style::Style=slides_def)
 	ℏ = sr.pars[:ℏ]
 	index_b = findfirst(statenames(sr).==:b)
 
@@ -131,7 +138,20 @@ function make_comp_V(sr::SOEres, xkey::Symbol; style::Style=slides_def)
 		new_v[:D][jv...] = vD
 	end
 	
-	makeplot_sr(sr, new_v, [:R, :D], xkey, style=style)	
+	if ykey == :nothing
+		makeplot_sr(sr, new_v, [:R, :D], xkey, style=style)
+	else
+		yR = grab_mat(sr, new_v[:R], xkey, ykey)
+		yD = grab_mat(sr, new_v[:D], xkey, ykey)
+
+		maxz = maximum(abs,extrema(yR-yD))
+
+		data = contour(x=sr.gr[xkey], y=sr.gr[ykey], z=yR-yD,
+			# contours=Dict(:start=>-maxz, :end=>maxz)
+			)
+		layout = Layout(xaxis_title="<i>"*string(xkey), yaxis_title="<i>"*string(ykey), title="<i>V<sup>R</sup> - V<sup>D</sup>")
+		return plot(data, style=Style(style, contsty(div=true)), layout)
+	end
 end
 
 make_debtprice(sr::SOEres, xkey::Symbol, ykey::Symbol; style::Style=slides_def) = make_contour(sr, sr.eq, :qb, xkey, ykey, style=style)
