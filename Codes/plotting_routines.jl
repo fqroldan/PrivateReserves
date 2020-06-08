@@ -33,9 +33,14 @@ contsty(;div::Bool=false) = let
 	Style(trace=Dict(:contour=>c_att))
 end
 
-default_eval_points(sr::SOEres) = floor(Int, N(sr,:b)*0.5), floor(Int, N(sr,:a)*0.5), floor(Int, N(sr,:z)*0.5), floor(Int, N(sr,:ν)*0.5)
+default_eval_vec(sr::SOEres) = floor(Int, N(sr,:b)*0.5), floor(Int, N(sr,:a)*0.5), floor(Int, N(sr,:z)*0.5), floor(Int, N(sr,:ν)*0.5)
 
-function grab_vec(sr::SOEres, y::Array{Float64,K}, key::Symbol, jζ=2; eval_points::Dict{Symbol, Int64}) where K
+function default_eval_points(sr::SOEres)
+	jb, ja, jz, jν = default_eval_vec(sr)
+	return Dict(:b=>jb, :a=>ja, :z=>jz, :ν=>jν)
+end
+
+function grab_vec(sr::SOEres, y::Array{Float64,K}, key::Symbol, jζ=2; eval_points::Dict{Symbol, Int64}=Dict{Symbol,Int64}()) where K
 	jk = findfirst(statenames(sr).==key)
 
 	eval_indices = default_eval_points(sr)
@@ -45,7 +50,7 @@ function grab_vec(sr::SOEres, y::Array{Float64,K}, key::Symbol, jζ=2; eval_poin
 		end
 	end
 
-	jvdef = [jv for jv in eval_indices]
+	jvdef = [eval_indices[key] for key in statenames(sr)]
 	if length(jvdef) + 1 == K
 		jvdef = push!(jvdef, jζ)
 	end
@@ -60,7 +65,7 @@ function grab_vec(sr::SOEres, y::Array{Float64,K}, key::Symbol, jζ=2; eval_poin
 	return yv
 end
 
-function grab_mat(sr::SOEres, y::Array{Float64,K}, k1::Symbol, k2::Symbol, jζ=2; eval_points::Dict{Symbol, Int64}) where K
+function grab_mat(sr::SOEres, y::Array{Float64,K}, k1::Symbol, k2::Symbol, jζ=2; eval_points::Dict{Symbol, Int64}=Dict{Symbol,Int64}()) where K
 	j1 = findfirst(statenames(sr).==k1)
 	N1 = size(y,j1)
 	j2 = findfirst(statenames(sr).==k2)
@@ -73,7 +78,7 @@ function grab_mat(sr::SOEres, y::Array{Float64,K}, k1::Symbol, k2::Symbol, jζ=2
 		end
 	end
 
-	jvdef = [jv for jv in eval_indices]
+	jvdef = [eval_indices[key] for key in statenames(sr)]
 	if length(jvdef) + 1 == K
 		jvdef = push!(jvdef, jζ)
 	end
@@ -93,20 +98,20 @@ makeplot_eq(sr::SOEres, ykey::Vector{Symbol}, xkey::Symbol, def::Bool=true; styl
 
 makeplot_v(sr::SOEres, ykey::Vector{Symbol}, xkey::Symbol, def::Bool=false; style::Style=slides_def) = makeplot_sr(sr, sr.v, ykey, xkey, def; style=style)
 
-makeplot_sr(sr::SOEres, srdict::Dict{Symbol, Array{Float64, K}}, ykey::Symbol, xkey::Symbol, def::Bool=false; style::Style=slides_def) where K = makeplot_sr(sr, srdict, [ykey], xkey, def; style=slides_def)
+makeplot_sr(sr::SOEres, srdict::Dict{Symbol, Array{Float64, K}}, ykey::Symbol, xkey::Symbol, def::Bool=true; style::Style=slides_def, eval_points::Dict{Symbol,Int64}=Dict{Symbol,Int64}()) where K = makeplot_sr(sr, srdict, [ykey], xkey, def; style=slides_def, eval_points=eval_points)
 
-makeplot_eq(sr::SOEres, ykey::Symbol, xkey::Symbol, def::Bool=false; style::Style=slides_def) = makeplot_eq(sr, [ykey], xkey, def; style=style)
+makeplot_eq(sr::SOEres, ykey::Symbol, xkey::Symbol, def::Bool=true; style::Style=slides_def) = makeplot_eq(sr, [ykey], xkey, def; style=style)
 
-makeplot_v(sr::SOEres, ykey::Symbol, xkey::Symbol, def::Bool=false; style::Style=slides_def) = makeplot_v(sr, [ykey], xkey, def; style=style)
+makeplot_v(sr::SOEres, ykey::Symbol, xkey::Symbol, def::Bool=true; style::Style=slides_def) = makeplot_v(sr, [ykey], xkey, def; style=style)
 
-function makeplot_sr(sr::SOEres, srdict::Dict{Symbol, Array{Float64, K}}, ykey::Vector{Symbol}, xkey::Symbol, def::Bool=false; style::Style=slides_def) where K
+function makeplot_sr(sr::SOEres, srdict::Dict{Symbol, Array{Float64, K}}, ykey::Vector{Symbol}, xkey::Symbol, def::Bool=true; style::Style=slides_def, eval_points::Dict{Symbol,Int64}=Dict{Symbol,Int64}()) where K
 
 	Nζ = 1+def
 
 	xvec = sr.gr[xkey]
-	yvec = [[grab_vec(sr, srdict[y], xkey, jj) for jj in 1:Nζ] for (jy,y) in enumerate(ykey)]
+	yvec = [[grab_vec(sr, srdict[y], xkey, jj, eval_points=eval_points) for jj in 1:Nζ] for (jy,y) in enumerate(ykey)]
 
-	namevec = [[string(y) * ifelse(Nζ==2,ifelse(def_state(sr, jζ), "Default", "Repayment"),"") for jζ in 1:2] for (jy,y) in enumerate(ykey)]
+	namevec = [[string(y) * ifelse(Nζ==2,ifelse(def_state(sr, jζ), ": Default", ": Repayment"),"") for jζ in 1:2] for (jy,y) in enumerate(ykey)]
 
 	data = [scatter(x=xvec, y=yvec[jy][jζ], name = namevec[jy][jζ]) for jζ in Nζ:-1:1, jy in 1:length(ykey)]
 
@@ -115,8 +120,8 @@ function makeplot_sr(sr::SOEres, srdict::Dict{Symbol, Array{Float64, K}}, ykey::
 	return p1
 end
 
-function make_contour(sr::SOEres, srd::Dict, zkey::Symbol, xkey::Symbol, ykey::Symbol; style::Style=slides_def)
-	y = grab_mat(sr, srd[zkey], xkey, ykey)
+function make_contour(sr::SOEres, srd::Dict, zkey::Symbol, xkey::Symbol, ykey::Symbol; style::Style=slides_def, eval_points::Dict{Symbol,Int64}=Dict{Symbol,Int64}())
+	y = grab_mat(sr, srd[zkey], xkey, ykey, eval_points=eval_points)
 
 	data = contour(x=sr.gr[xkey], y=sr.gr[ykey], z=y)
 
@@ -125,7 +130,7 @@ function make_contour(sr::SOEres, srd::Dict, zkey::Symbol, xkey::Symbol, ykey::S
 	return plot(data, style=style, layout)
 end
 
-function make_comp_V(sr::SOEres, xkey::Symbol, ykey::Symbol=:nothing; style::Style=slides_def)
+function make_comp_V(sr::SOEres, xkey::Symbol, ykey::Symbol=:nothing; style::Style=slides_def, eval_points::Dict{Symbol,Int64}=Dict{Symbol,Int64}())
 	ℏ = sr.pars[:ℏ]
 	index_b = findfirst(statenames(sr).==:b)
 
@@ -153,21 +158,21 @@ function make_comp_V(sr::SOEres, xkey::Symbol, ykey::Symbol=:nothing; style::Sty
 	end
 	
 	if ykey == :nothing
-		makeplot_sr(sr, new_v, [:R, :D], xkey, style=style)
+		makeplot_sr(sr, new_v, [:R, :D], xkey, style=style, eval_points=eval_points)
 	else
-		yR = grab_mat(sr, new_v[:R], xkey, ykey)
-		yD = grab_mat(sr, new_v[:D], xkey, ykey)
+		yR = grab_mat(sr, new_v[:R], xkey, ykey, eval_points=eval_points)
+		yD = grab_mat(sr, new_v[:D], xkey, ykey, eval_points=eval_points)
 
 		maxz = maximum(abs,extrema(yR-yD))
 
 		data = contour(x=sr.gr[xkey], y=sr.gr[ykey], z=yR-yD,
-			# contours=Dict(:start=>-maxz, :end=>maxz)
+			contours=Dict(:start=>-maxz, :end=>maxz)
 			)
 		layout = Layout(xaxis_title="<i>"*string(xkey), yaxis_title="<i>"*string(ykey), title="<i>V<sup>R</sup> - V<sup>D</sup>")
 		return plot(data, style=Style(style, contsty(div=true)), layout)
 	end
 end
 
-make_debtprice(sr::SOEres, xkey::Symbol, ykey::Symbol; style::Style=slides_def) = make_contour(sr, sr.eq, :qb, xkey, ykey, style=style)
+make_debtprice(sr::SOEres, xkey::Symbol, ykey::Symbol; style::Style=slides_def, eval_points::Dict{Symbol,Int64}=Dict{Symbol,Int64}()) = make_contour(sr, sr.eq, :qb, xkey, ykey, style=style, eval_points=eval_points)
 
-make_defprob(sr::SOEres, xkey::Symbol, ykey::Symbol; style::Style=slides_def) = make_contour(sr, sr.v, :def, xkey, ykey, style=style)
+make_defprob(sr::SOEres, xkey::Symbol, ykey::Symbol; style::Style=slides_def, eval_points::Dict{Symbol,Int64}=Dict{Symbol,Int64}()) = make_contour(sr, sr.v, :def, xkey, ykey, style=style, eval_points=eval_points)
