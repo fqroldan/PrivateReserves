@@ -43,16 +43,16 @@ function SOEres(;
 	σz=0.045,		# AR(1) for TFP in tradable sector
 
 	α=0.75, 		# Curvature of production function
-	Nb = 9,
-	Na = 9,
+	Nb = 11,
+	Na = 11,
 	Nz = 5
 	)
 	
 	ρz, σz = quarterlize_AR1(ρz, σz)
 	μz = -0.5 * σz^2
 
-	bgrid = range(0,0.8,length=Nb)
-	agrid = range(0,0.8,length=Na)
+	bgrid = range(0,1.0,length=Nb)
+	agrid = range(0,0.5,length=Na)
 
 	zchain = tauchen(Nz, ρz, σz, μz, 1)
 	zgrid, Pz = zchain.state_values, zchain.p
