@@ -34,29 +34,36 @@ end
 bond_decay(sr::SOEres, jdef) = ifelse(jdef, 0.0, sr.pars[:δ])
 output_T(sr::SOEres, state, jdef) = exp(state[:z]) * (1-sr.pars[:Δ]*jdef)
 
-function price_debt(sr::SOEres, bp, ap, pz, pν, zv, νv, itp_def, itp_q)
+function price_debt(sr::SOEres, choices, zv, νv, pz, pν, itp_def, itp_q)
 	""" Iterates once on the debt price using next period's state """
 	δ, ℏ, ψ, σz, r = [sr.pars[sym] for sym in [:δ, :ℏ, :ψ, :σz, :r]]
 	qb = 0.0
 	for (jzp, zpv) in enumerate(sr.gr[:z]), (jνp, νpv) in enumerate(sr.gr[:ν])
 		prob = pz[jzp] * pν[jνp]
 
+		sp = merge(Dict([(:z,zpv),(:ν,νpv)]), choices)
+
+		sp = [choices[key] for key in statenames(sr)]
+		corr = ones(length(sp))
+		corr[index_b] *= (1-ℏ)
+		sp_def = sp .* corr
+
 		ϵpv = innov_z(sr, zpv, zv)
 		sdf = exp(-r - νv * (ψ * ϵpv + 0.5 * ψ^2*σz^2))
 
 		jζp = 1 # Default
-		rep_default= (1-δ) * (1-ℏ) * itp_q(bp,ap,zpv,νpv,sr.gr[:def][jζp])
+		rep_default= (1-δ) * (1-ℏ) * itp_q(sp_def...,sr.gr[:def][jζp])
 		jζp = 2 # Repayment
-		rep_normal = δ + (1-δ) * itp_q(bp, ap, zpv, νpv, sr.gr[:def][jζp])
+		rep_normal = δ + (1-δ) * itp_q(sp..., sr.gr[:def][jζp])
 
-		def_prob = itp_def(bp, ap, zpv, νpv)
+		def_prob = itp_def(sp...)
 
 		qb += prob * sdf * (def_prob * rep_default + (1-def_prob) * rep_normal)
 	end
 	return qb
 end
 
-function budget_constraint_T(sr::SOEres, state, pz, pν, bp, ap, itp_def, itp_q, jdef::Bool)
+function budget_constraint_T(sr::SOEres, state, pz, pν, choices, itp_def, itp_q, jdef::Bool)
 	""" Computes consumption of T given state and choices of new debt and reserves """
 
 	yT = output_T(sr, state, jdef)
@@ -65,9 +72,11 @@ function budget_constraint_T(sr::SOEres, state, pz, pν, bp, ap, itp_def, itp_q,
 	bv, av, zv, νv = [state[key] for key in [:b, :a, :z, :ν]]
 	qa = exp(-sr.pars[:r])
 
+	bp, ap = [choices[key] for key in [:b, :a]]
+
 	debt_operations = 0.0
 	if !jdef
-		qb = price_debt(sr, bp, ap, pz, pν, zv, νv, itp_def, itp_q)
+		qb = price_debt(sr, choices, zv, νv, pz, pν, itp_def, itp_q)
 		debt_operations = qb * (bp - (1-δv) * bv) - δv * bv
 	end
 
@@ -75,9 +84,9 @@ function budget_constraint_T(sr::SOEres, state, pz, pν, bp, ap, itp_def, itp_q,
 	return cT
 end
 
-function budget_constraint_agg(sr::SOEres, state, pz, pν, bp, ap, itp_def, itp_q, jdef::Bool)
+function budget_constraint_agg(sr::SOEres, state, pz, pν, choices, itp_def, itp_q, jdef::Bool)
 	""" Computes aggregate of C at state and choices of new debt and reserves """
-	cT = budget_constraint_T(sr, state, pz, pν, bp, ap, itp_def, itp_q, jdef)
+	cT = budget_constraint_T(sr, state, pz, pν, choices, itp_def, itp_q, jdef)
 
 	cT = max(0.0, cT)
 
@@ -92,19 +101,24 @@ function value(sr::SOEres, state, pz, pν, bp, ap, itp_v, itp_vd, itp_def, itp_q
 	""" Computes V given state and choices of consumption, debt, reserves """
 	θ, ℏ, β = [sr.pars[sym] for sym in [:θ, :ℏ, :β]]
 
+	choices = Dict([(:b,bp), (:a,ap)])
+
 	# bp = max(bp, minimum(sr.gr[:b]))
 	# bp = min(bp, maximum(sr.gr[:b]))
 
-	c = budget_constraint_agg(sr, state, pz, pν, bp, ap, itp_def, itp_q, jdef)
+	c = budget_constraint_agg(sr, state, pz, pν, choices, itp_def, itp_q, jdef)
 	ut = utility(sr, c)
 
 	vp = 0.0
 	for (jzp, zpv) in enumerate(sr.gr[:z]), (jνp, νpv) in enumerate(sr.gr[:ν])
 		prob = pz[jzp] * pν[jνp]
+		sp = merge(Dict([(:z,zpv),(:ν,νpv)]), choices)
+
+		sp = [sp[key] for key in statenames(sr)]
 		if jdef
-			Vpv = θ * itp_v(bp, ap, zpv, νpv) + (1-θ) * itp_vd(bp, ap, zpv, νpv)
+			Vpv = θ * itp_v(sp...) + (1-θ) * itp_vd(sp...)
 		else
-			Vpv = itp_v(bp, ap, zpv, νpv)
+			Vpv = itp_v(sp...)
 		end
 
 		vp += prob * Vpv
@@ -226,10 +240,13 @@ function update_def!(sr::SOEres, new_v)
 		jv = Jgrid[js,:]
 
 		state = S(sr, jv)
-		bv, av, zv, νv = [state[key] for key in [:b,:a,:z,:ν]]
+		st = [state[key] for key in [:b,:a,:z,:ν]]
+		corr = ones(length(st))
+		corr[index_b] *= (1-ℏ)
+		st_def = st .* corr
 
 		vR = new_v[:R][jv...]
-		vD = itp_vd((1-ℏ)*bv, av, zv, νv)
+		vD = itp_vd(st_def...)
 
 		def_prob = prob_extreme_value(sr,vR,vD)
 
