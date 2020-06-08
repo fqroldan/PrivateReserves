@@ -34,36 +34,30 @@ end
 bond_decay(sr::SOEres, jdef) = ifelse(jdef, 0.0, sr.pars[:δ])
 output_T(sr::SOEres, state, jdef) = exp(state[:z]) * (1-sr.pars[:Δ]*jdef)
 
-function price_debt(sr::SOEres, choices, zv, νv, pz, pν, itp_def, itp_q)
+function price_debt(sr::SOEres, xp, zv, νv, pz, pν, itp_def, itp_q)
 	""" Iterates once on the debt price using next period's state """
 	δ, ℏ, ψ, σz, r = [sr.pars[sym] for sym in [:δ, :ℏ, :ψ, :σz, :r]]
 	qb = 0.0
+	bp, ap = xp
 	for (jzp, zpv) in enumerate(sr.gr[:z]), (jνp, νpv) in enumerate(sr.gr[:ν])
 		prob = pz[jzp] * pν[jνp]
-
-		sp = merge(Dict([(:z,zpv),(:ν,νpv)]), choices)
-
-		sp = [choices[key] for key in statenames(sr)]
-		corr = ones(length(sp))
-		corr[index_b] *= (1-ℏ)
-		sp_def = sp .* corr
 
 		ϵpv = innov_z(sr, zpv, zv)
 		sdf = exp(-r - νv * (ψ * ϵpv + 0.5 * ψ^2*σz^2))
 
 		jζp = 1 # Default
-		rep_default= (1-δ) * (1-ℏ) * itp_q(sp_def...,sr.gr[:def][jζp])
+		rep_default= (1-δ) * (1-ℏ) * itp_q(bp*(1-ℏ),ap,zpv,νpv, sr.gr[:def][jζp])
 		jζp = 2 # Repayment
-		rep_normal = δ + (1-δ) * itp_q(sp..., sr.gr[:def][jζp])
+		rep_normal = δ + (1-δ) * itp_q(bp,ap,zpv,νpv, sr.gr[:def][jζp])
 
-		def_prob = itp_def(sp...)
+		def_prob = itp_def(bp,ap,zpv,νpv)
 
 		qb += prob * sdf * (def_prob * rep_default + (1-def_prob) * rep_normal)
 	end
 	return qb
 end
 
-function budget_constraint_T(sr::SOEres, state, pz, pν, choices, itp_def, itp_q, jdef::Bool)
+function budget_constraint_T(sr::SOEres, state, pz, pν, xp, itp_def, itp_q, jdef::Bool)
 	""" Computes consumption of T given state and choices of new debt and reserves """
 
 	yT = output_T(sr, state, jdef)
@@ -72,11 +66,11 @@ function budget_constraint_T(sr::SOEres, state, pz, pν, choices, itp_def, itp_q
 	bv, av, zv, νv = [state[key] for key in [:b, :a, :z, :ν]]
 	qa = exp(-sr.pars[:r])
 
-	bp, ap = [choices[key] for key in [:b, :a]]
+	bp, ap = xp
 
 	debt_operations = 0.0
 	if !jdef
-		qb = price_debt(sr, choices, zv, νv, pz, pν, itp_def, itp_q)
+		qb = price_debt(sr, xp, zv, νv, pz, pν, itp_def, itp_q)
 		debt_operations = qb * (bp - (1-δv) * bv) - δv * bv
 	end
 
@@ -84,9 +78,9 @@ function budget_constraint_T(sr::SOEres, state, pz, pν, choices, itp_def, itp_q
 	return cT
 end
 
-function budget_constraint_agg(sr::SOEres, state, pz, pν, choices, itp_def, itp_q, jdef::Bool)
+function budget_constraint_agg(sr::SOEres, state, pz, pν, xp, itp_def, itp_q, jdef::Bool)
 	""" Computes aggregate of C at state and choices of new debt and reserves """
-	cT = budget_constraint_T(sr, state, pz, pν, choices, itp_def, itp_q, jdef)
+	cT = budget_constraint_T(sr, state, pz, pν, xp, itp_def, itp_q, jdef)
 
 	cT = max(0.0, cT)
 
@@ -101,30 +95,30 @@ function value(sr::SOEres, state, pz, pν, bp, ap, itp_v, itp_vd, itp_def, itp_q
 	""" Computes V given state and choices of consumption, debt, reserves """
 	θ, ℏ, β = [sr.pars[sym] for sym in [:θ, :ℏ, :β]]
 
-	choices = Dict([(:b,bp), (:a,ap)])
+	# xp = Dict([(:b,bp), (:a,ap)])
+
+	xp = [bp, ap]
 
 	# bp = max(bp, minimum(sr.gr[:b]))
 	# bp = min(bp, maximum(sr.gr[:b]))
 
-	c = budget_constraint_agg(sr, state, pz, pν, choices, itp_def, itp_q, jdef)
+	c = budget_constraint_agg(sr, state, pz, pν, xp, itp_def, itp_q, jdef)
 	ut = utility(sr, c)
 
 	vp = 0.0
 	for (jzp, zpv) in enumerate(sr.gr[:z]), (jνp, νpv) in enumerate(sr.gr[:ν])
 		prob = pz[jzp] * pν[jνp]
-		sp = merge(Dict([(:z,zpv),(:ν,νpv)]), choices)
-
-		sp = [sp[key] for key in statenames(sr)]
 		if jdef
-			Vpv = θ * itp_v(sp...) + (1-θ) * itp_vd(sp...)
+			Vpv = θ * itp_v(xp..., zpv, νpv) + (1-θ) * itp_vd(xp..., zpv, νpv)
 		else
-			Vpv = itp_v(sp...)
+			Vpv = itp_v(xp..., zpv, νpv)
 		end
 
 		vp += prob * Vpv
 	end
 
-	return ut + β * vp
+	vt = ut + β * vp
+	return vt
 end
 
 function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q)
@@ -142,16 +136,18 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 
 	if !Optim.converged(res)
 		res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(BFGS()))
-		if !Optim.converged(res)
-			println("WARNING: DIDN'T FIND SOL IN R")
-		end
 	end
+	
+	!Optim.converged(res) && println("WARNING: DIDN'T FIND SOL IN R")
+	
+	x_opt = res.minimizer
+	bpv, apv = x_opt
+	vR = -obj_f(x_opt)
 
-	bpv, apv = res.minimizer
-	vR = -obj_f(res.minimizer)
+	ϕ = Dict(:a=>apv, :b=>bpv)
 
 	ccv = budget_constraint_agg(sr, state, pz, pν, bpv, apv, itp_def, itp_q, jdef)
-	ϕ = Dict(:a => apv, :b => bpv, :c => ccv)
+	ϕ[:c] = ccv
 	return ϕ, vR
 end
 
@@ -169,17 +165,16 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 	obj_f(x) = -value(sr, state, pz, pν, bpv, x[1], itp_v, itp_vd, itp_def, itp_q, jdef)
 	res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(GradientDescent()))
 
-	if !Optim.converged(res)
-	println("WARNING: DIDN'T FIND SOL IN D")
-	end
+	!Optim.converged(res) && println("WARNING: DIDN'T FIND SOL IN D")
 
-	apv = first(res.minimizer)
-	vD = -obj_f(res.minimizer)
+	x_opt = res.minimizer
+	apv = first(x_opt)
+	vD = -obj_f(x_opt)
 
-	!Optim.converged(res) && print("Cannot optimize in D")
+	ϕ = Dict(:a=>apv, :b=>bpv)
 	
 	ccv = budget_constraint_agg(sr, state, pz, pν, bpv, apv, itp_def, itp_q, jdef)
-	ϕ = Dict(:a => apv, :b => bpv, :c => ccv)
+	ϕ[:c] = ccv
 	return ϕ, vD
 end
 
@@ -188,7 +183,7 @@ function solve_optvalue(sr::SOEres, itp_v, itp_vd, itp_def, itp_q)
 	new_v = Dict(key => similar(val) for (key, val) in sr.v)
 	new_ϕ = Dict(key => similar(val) for (key, val) in sr.ϕ)
 
-	Jgrid = agg_grid(sr)
+	Jgrid = agg_grid(sr);
 	Threads.@threads for js in 1:size(Jgrid,1)
 		jv = Jgrid[js,:]
 
@@ -200,7 +195,7 @@ function solve_optvalue(sr::SOEres, itp_v, itp_vd, itp_def, itp_q)
 
 		guess = Dict(key => val[jv...,:] for (key,val) in sr.ϕ)
 
-		""" New choices and values in repayment and default """
+		""" New xp and values in repayment and default """
 		ϕR, vR = opt_value_R(sr, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q)
 		ϕD, vD = opt_value_D(sr, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q)
 
@@ -241,9 +236,11 @@ function update_def!(sr::SOEres, new_v)
 
 		state = S(sr, jv)
 		st = [state[key] for key in [:b,:a,:z,:ν]]
-		corr = ones(length(st))
-		corr[index_b] *= (1-ℏ)
-		st_def = st .* corr
+		st_def = corr(sr, st)
+		# corr = ones(length(st))
+		# index_b = findfirst(statenames(sr).==:b)
+		# corr[index_b] *= (1-ℏ)
+		# st_def = st .* corr
 
 		vR = new_v[:R][jv...]
 		vD = itp_vd(st_def...)

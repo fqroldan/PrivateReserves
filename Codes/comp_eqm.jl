@@ -1,6 +1,6 @@
 using Printf, Interpolations
 
-function repayment_def(sr::SOEres, qv, jζ, jζp)
+function repayment_def(sr::SOEres, qv, qvd, jζ, jζp)
 	""" Use future q and reentry/default probs to calculate repayment """
 	θ, κ, δ, ℏ = [sr.pars[sym] for sym in [:θ, :κ, :δ, :ℏ]]
 
@@ -10,7 +10,7 @@ function repayment_def(sr::SOEres, qv, jζ, jζp)
 	elseif jζ == 1 # Default in t and t+1
 		rep = qv
 	elseif jζ == 2 # Defaulted at t+1
-		rep = (1-ℏ) * qv
+		rep = (1-ℏ) * qvd
 	end
 	return rep
 end
@@ -42,7 +42,7 @@ end
 function iterate_q(sr::SOEres, itp_q, itp_def)
 	""" One iteration of the debt price """
 	new_q = zeros(size(sr.eq[:qb]))
-	ψ, σz, r = [sr.pars[key] for key in [:ψ, :σz, :r]]
+	ψ, σz, r, ℏ = [sr.pars[key] for key in [:ψ, :σz, :r, :ℏ]]
 
 	Jgrid = agg_grid(sr)
 	Threads.@threads for js in 1:size(Jgrid,1)
@@ -71,7 +71,8 @@ function iterate_q(sr::SOEres, itp_q, itp_def)
 				for jζp in 1:2
 					ζpv = sr.gr[:def][jζp]
 					qvp = itp_q(bpv, apv, zpv, νpv, ζpv)
-					qn += prob * prob_def(sr, jζ, jζp, defp) * repayment_def(sr,qvp, jζ, jζp) * sdf
+					qvd = itp_q((1-ℏ)*bpv, apv, zpv, νpv, ζpv)
+					qn += prob * prob_def(sr, jζ, jζp, defp) * repayment_def(sr,qvp,qvd,jζ, jζp) * sdf
 				end
 			end
 			new_q[jv..., jζ] = qn

@@ -107,6 +107,19 @@ S(sr::SOEres, jvec)  = Dict(sym => sr.gr[sym][jvec[jj]] for (jj, sym) in enumera
 S_index(sr::SOEres, jvec) = Dict(sym => [jvec[jj]] for (jj, sym) in enumerate(statenames(sr)))
 S_vec(sr::SOEres, s) = [s[key] for key in statenames(sr)]
 
+function corr(sr::SOEres, st)
+	corr = ones(length(st))
+	if any(statenames(sr).==:b)
+		index_b = findfirst(statenames(sr).==:b)
+		corr[index_b] *= (1-sr.pars[:ℏ])
+		st_def = st .* corr
+	else
+		print("WARNING: NO VARIABLE CALLED :b IN TYPE")
+		st_def = st
+	end
+	return st_def
+end
+
 
 def_state(sr::SOEres, jζ::Int64) = (jζ == 1)
 

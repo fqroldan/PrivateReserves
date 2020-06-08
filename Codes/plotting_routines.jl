@@ -35,10 +35,17 @@ end
 
 default_eval_points(sr::SOEres) = floor(Int, N(sr,:b)*0.5), floor(Int, N(sr,:a)*0.5), floor(Int, N(sr,:z)*0.5), floor(Int, N(sr,:ν)*0.5)
 
-function grab_vec(sr::SOEres, y::Array{Float64,K}, key::Symbol, jζ=2) where K
+function grab_vec(sr::SOEres, y::Array{Float64,K}, key::Symbol, jζ=2; eval_points::Dict{Symbol, Int64}) where K
 	jk = findfirst(statenames(sr).==key)
 
-	jvdef = [jv for jv in default_eval_points(sr)]
+	eval_indices = default_eval_points(sr)
+	for (key, val) in eval_points
+		if haskey(eval_indices, key)
+			eval_indices[key] = val
+		end
+	end
+
+	jvdef = [jv for jv in eval_indices]
 	if length(jvdef) + 1 == K
 		jvdef = push!(jvdef, jζ)
 	end
@@ -53,13 +60,20 @@ function grab_vec(sr::SOEres, y::Array{Float64,K}, key::Symbol, jζ=2) where K
 	return yv
 end
 
-function grab_mat(sr::SOEres, y::Array{Float64,K}, k1::Symbol, k2::Symbol, jζ=2) where K
+function grab_mat(sr::SOEres, y::Array{Float64,K}, k1::Symbol, k2::Symbol, jζ=2; eval_points::Dict{Symbol, Int64}) where K
 	j1 = findfirst(statenames(sr).==k1)
 	N1 = size(y,j1)
 	j2 = findfirst(statenames(sr).==k2)
 	N2 = size(y,j2)
 
-	jvdef = [jv for jv in default_eval_points(sr)]
+	eval_indices = default_eval_points(sr)
+	for (key, val) in eval_points
+		if haskey(eval_indices, key)
+			eval_indices[key] = val
+		end
+	end
+
+	jvdef = [jv for jv in eval_indices]
 	if length(jvdef) + 1 == K
 		jvdef = push!(jvdef, jζ)
 	end
