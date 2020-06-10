@@ -134,7 +134,7 @@ function update_eqm!(sr::SOEres)
 
 			bp, ap = [sr.ϕ[key][jv..., jζ] for key in [:b, :a]]
 
-			cT = budget_constraint_T(sr, state, pz, pν, bp, ap, itp_def, itp_q, jdef)
+			cT = budget_constraint_T(sr, state, pz, pν, [bp, ap], itp_def, itp_q, jdef)
 			hp = eq_h(sr, cT)
 			yN = prod_N(sr, hp)
 			yT = output_T(sr, state, jdef)

@@ -173,7 +173,7 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 
 	ϕ = Dict(:a=>apv, :b=>bpv)
 	
-	ccv = budget_constraint_agg(sr, state, pz, pν, bpv, apv, itp_def, itp_q, jdef)
+	ccv = budget_constraint_agg(sr, state, pz, pν, [bpv, apv], itp_def, itp_q, jdef)
 	ϕ[:c] = ccv
 	return ϕ, vD
 end
