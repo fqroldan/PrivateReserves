@@ -26,8 +26,8 @@ paper = let
 	Style(def_style, layout=layout)
 end
 
-contsty(;div::Bool=false) = let
-	colpal = ifelse(div, ColorSchemes.oleron, ColorSchemes.lajolla)
+contsty(;diverg::Bool=false) = let
+	colpal = ifelse(diverg, ColorSchemes.davos, ColorSchemes.lajolla)
 	colscale = [[vv, get(colpal, vv)] for vv in range(0,1,length=100)]
 	c_att = attr(colorscale=colscale, autocontour=false)
 	Style(trace=Dict(:contour=>c_att))
@@ -166,10 +166,10 @@ function make_comp_V(sr::SOEres, xkey::Symbol, ykey::Symbol=:nothing; style::Sty
 		maxz = maximum(abs,extrema(yR-yD))
 
 		data = contour(x=sr.gr[xkey], y=sr.gr[ykey], z=yR-yD,
-			contours=Dict(:start=>-maxz, :end=>maxz)
+			# contours=Dict(:start=>-maxz, :end=>maxz)
 			)
 		layout = Layout(xaxis_title="<i>"*string(xkey), yaxis_title="<i>"*string(ykey), title="<i>V<sup>R</sup> - V<sup>D</sup>")
-		return plot(data, style=Style(style, contsty(div=true)), layout)
+		return plot(data, style=Style(style, contsty(diverg=true)), layout)
 	end
 end
 
