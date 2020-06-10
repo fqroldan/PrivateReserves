@@ -20,7 +20,7 @@ function quarterlize_AR1(ρ, σ)
 end
 
 function SOEres(;
-	β=1.15^-.25,	# Discount factor
+	β=1.05^-.25,	# Discount factor
 	γ=2.273,		# Risk aversion
 
 	κ=0.185,		# Scale parameter for Extreme Value default choice shock
@@ -31,7 +31,7 @@ function SOEres(;
 	ψ=15,			# Inverse exposure of foreigners to domestic shock
 	θ=.04167,		# Reentry probability
 	ℏ=.4,			# Haircut on default
-	Δ=.1,			# Productivity loss in default
+	Δ=.03,			# Productivity loss in default
 
 	ϖ=0.6,			# Relative weight of nontradables
 	η=1/0.83-1,		# Elasticity of substitution btw T and N
@@ -68,8 +68,8 @@ function SOEres(;
 
 	K = length(size(R))
 
-	bp = ones(Nb, Na, Nz, Nν, 2) * 0.5
-	ap = ones(Nb, Na, Nz, Nν, 2) * 0.5
+	bp = ones(Nb, Na, Nz, Nν, 2) * mean(bgrid)
+	ap = ones(Nb, Na, Nz, Nν, 2) * mean(agrid)
 	cc = ones(Nb, Na, Nz, Nν, 2) * 0.5
 	
 	cT = ones(Nb, Na, Nz, Nν, 2) * 0.5
