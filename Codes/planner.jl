@@ -43,7 +43,7 @@ function price_debt(sr::SOEres, xp, zv, νv, pz, pν, itp_def, itp_q)
 		prob = pz[jzp] * pν[jνp]
 
 		ϵpv = innov_z(sr, zpv, zv)
-		sdf = exp(-r - νv * (ψ * ϵpv + 0.5 * ψ^2*σz^2))
+		sdf = exp(-r - νv * (ψ * ϵpv - 0.5 * ψ^2*σz^2))
 
 		jζp = 1 # Default
 		rep_default= (1-δ) * (1-ℏ) * itp_q(bp*(1-ℏ),ap,zpv,νpv, sr.gr[:def][jζp])

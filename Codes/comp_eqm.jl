@@ -66,7 +66,7 @@ function iterate_q(sr::SOEres, itp_q, itp_def)
 				prob = pz[jzp] * pν[jνp]
 
 				ϵpv = innov_z(sr, zpv, zv)
-				sdf = exp(-r - νv * (ψ * ϵpv + 0.5 * ψ^2*σz^2))
+				sdf = exp(-r - νv * (ψ * ϵpv - 0.5 * ψ^2*σz^2))
 
 				for jζp in 1:2
 					ζpv = sr.gr[:def][jζp]
