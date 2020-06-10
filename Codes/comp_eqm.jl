@@ -66,7 +66,7 @@ function iterate_q(sr::SOEres, itp_q, itp_def)
 				prob = pz[jzp] * pν[jνp]
 
 				ϵpv = innov_z(sr, zpv, zv)
-				sdf = exp(-r - νv * (ψ * ϵpv - 0.5 * ψ^2*σz^2))
+				sdf = exp(-r - νv * (ψ * ϵpv + 0.5 * ψ^2*σz^2))
 
 				for jζp in 1:2
 					ζpv = sr.gr[:def][jζp]
@@ -74,6 +74,7 @@ function iterate_q(sr::SOEres, itp_q, itp_def)
 					qvd = itp_q((1-ℏ)*bpv, apv, zpv, νpv, ζpv)
 					qn += prob * prob_def(sr, jζ, jζp, defp) * repayment_def(sr,qvp,qvd,jζ, jζp) * sdf
 				end
+				# qn += prob * sdf * 1 # FOR TESTING ONLY
 			end
 			new_q[jv..., jζ] = qn
 		end
