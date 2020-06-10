@@ -127,7 +127,7 @@ function make_contour(sr::SOEres, srd::Dict, zkey::Symbol, xkey::Symbol, ykey::S
 
 	layout = Layout(xaxis_title="<i>"*string(xkey), yaxis_title="<i>"*string(ykey))
 
-	return plot(data, style=style, layout)
+	return plot(data, style=Style(style, contsty(diverg=false)), layout)
 end
 
 function make_comp_V(sr::SOEres, xkey::Symbol, ykey::Symbol=:nothing; style::Style=slides_def, eval_points::Dict{Symbol,Int64}=Dict{Symbol,Int64}())
