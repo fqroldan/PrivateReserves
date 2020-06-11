@@ -104,7 +104,7 @@ makeplot_eq(sr::SOEres, ykey::Symbol, xkey::Symbol, def::Bool=true; style::Style
 
 makeplot_v(sr::SOEres, ykey::Symbol, xkey::Symbol, def::Bool=true; style::Style=slides_def) = makeplot_v(sr, [ykey], xkey, def; style=style)
 
-function makeplot_sr(sr::SOEres, srdict::Dict{Symbol, Array{Float64, K}}, ykey::Vector{Symbol}, xkey::Symbol, def::Bool=true; style::Style=slides_def, eval_points::Dict{Symbol,Int64}=Dict{Symbol,Int64}()) where K
+function makeplot_sr(sr::SOEres, srdict::Dict{Symbol, Array{Float64, K}}, ykey::Vector{Symbol}, xkey::Symbol; def::Bool=true, style::Style=slides_def, eval_points::Dict{Symbol,Int64}=Dict{Symbol,Int64}()) where K
 
 	Nζ = 1+def
 
@@ -115,7 +115,7 @@ function makeplot_sr(sr::SOEres, srdict::Dict{Symbol, Array{Float64, K}}, ykey::
 
 	data = [scatter(x=xvec, y=yvec[jy][jζ], name = namevec[jy][jζ]) for jζ in Nζ:-1:1, jy in 1:length(ykey)]
 
-	p1 = plot(data[:],style=style, Layout(title=uppercasefirst(string(first(ykey)))))
+	p1 = plot(data[:],style=style, Layout(title=uppercasefirst(string(first(ykey))), xaxis_title="<i>"*string(xkey)))
 
 	return p1
 end
@@ -158,7 +158,7 @@ function make_comp_V(sr::SOEres, xkey::Symbol, ykey::Symbol=:nothing; style::Sty
 	end
 	
 	if ykey == :nothing
-		makeplot_sr(sr, new_v, [:R, :D], xkey, style=style, eval_points=eval_points)
+		makeplot_sr(sr, new_v, [:R, :D], xkey, def=false, style=style, eval_points=eval_points)
 	else
 		yR = grab_mat(sr, new_v[:R], xkey, ykey, eval_points=eval_points)
 		yD = grab_mat(sr, new_v[:D], xkey, ykey, eval_points=eval_points)
