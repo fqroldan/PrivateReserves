@@ -237,10 +237,6 @@ function update_def!(sr::SOEres, new_v)
 		state = S(sr, jv)
 		st = [state[key] for key in [:b,:a,:z,:ν]]
 		st_def = corr(sr, st)
-		# corr = ones(length(st))
-		# index_b = findfirst(statenames(sr).==:b)
-		# corr[index_b] *= (1-ℏ)
-		# st_def = st .* corr
 
 		vR = new_v[:R][jv...]
 		vD = itp_vd(st_def...)
