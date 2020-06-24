@@ -43,9 +43,9 @@ function SOEres(;
 	σz=0.045,		# AR(1) for TFP in tradable sector
 
 	α=0.75, 		# Curvature of production function
-	Nb = 11,
-	Na = 11,
-	Nz = 5
+	Nb = 13,
+	Na = 13,
+	Nz = 9
 	)
 	
 	ρz, σz = quarterlize_AR1(ρz, σz)
