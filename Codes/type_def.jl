@@ -13,6 +13,55 @@ mutable struct SOEres{K, Kd}
 	# gov::Dict{Symbol, Array{Float64, Ktot}}
 end
 
+abstract type AbstractPath
+end
+mutable struct Path{T} <: AbstractPath
+	data::Dict{Symbol, Vector{Float64}}
+end
+function Path(; T::Int64 = 1)
+	data = Dict( key => Vector{Float64}(undef, T) for key in [:b, :a, :jζ, :jz, :jν, :ζ, :z, :ν, :pN, :C, :cT, :cN, :CA, :output, :labor, :qa, :qb])
+	return Path{T}(data)
+end
+
+periods(pv::Vector{T}) where T <: AbstractPath = sum([periods(pp) for pp in pv])
+periods(p::Path{T}) where T = T
+
+function check_periods(p::Path, t::Int64)
+	0 < t <= periods(p) || throw("t out of bounds")
+	nothing
+end
+
+getfrompath(p::Path, t::Int64, sym::Symbol) = p.data[sym][t]
+getfrompath(p::Path, t::AbstractArray, sym::Symbol) = [p.data[sym][tv] for tv in t]
+getfrompath(p::Path, t::Int) = Dict(key => p.data[key][t] for key in keys(p.data))
+getfrompath(p::Path, sym::Symbol) = p.data[sym]
+series(p::Path, sym::Symbol) = getfrompath(p,sym)
+getmean(p::Path, sym::Symbol) = getmean([p], sym)
+getmean(pv::Vector{T}, sym::Symbol) where T <: AbstractPath = mean(vcat([series(pp, sym) for pp in pv]...))
+
+function fill_path!(p::Path, t::Int64, d::Dict=Dict())
+	check_periods(p,t)
+	missing_keys = 0
+	for (key, val) in d
+		if haskey(p.data, key)
+			p.data[key][t] = val
+		else
+			missing_keys += 1
+		end
+	end
+	
+	if missing_keys > 0
+		print_save("WARNING: $missing_keys missing keys")
+	end
+	nothing
+end
+
+function trim_path(p::Path{T}, t0::Int64) where T
+	check_periods(p,t0)
+	
+	return Path{T-t0}(Dict(key => val[t0+1:end] for (key, val) in p.data))
+end
+
 function quarterlize_AR1(ρ, σ)
 	ρ4 = ρ^0.25
 	σ4 = sqrt(  σ^2 / ( 1 + ρ4^2 + ρ4^4 + ρ4^6 )  )
@@ -134,6 +183,12 @@ function CES_aggregator(sr::SOEres, cT, cN)
 	ϖN, ϖT, η = [sr.pars[key] for key in [:ϖN, :ϖT, :η]]
 
 	return (ϖN * cN^-η + ϖT * cT^-η)^(-1/η)
+end
+
+function price_nontradable(sr::SOEres, cT, cN, pT = 1)
+	ϖN, ϖT, η = [sr.pars[key] for key in [:ϖN, :ϖT, :η]]
+
+	pN = ϖN / (1-ϖT) * (cT/cN)^(1+η) * pT
 end
 
 function price_index(sr::SOEres, pN, pT = 1)

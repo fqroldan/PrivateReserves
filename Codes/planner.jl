@@ -34,7 +34,7 @@ end
 bond_decay(sr::SOEres, jdef) = ifelse(jdef, 0.0, sr.pars[:δ])
 output_T(sr::SOEres, state, jdef) = exp(state[:z]) * (1-sr.pars[:Δ]*jdef)
 
-function price_debt(sr::SOEres, xp, zv, νv, pz, pν, itp_def, itp_q)
+function price_debt(sr::SOEres, xp, zv, νv, pz, pν, itp_def, itp_q; jdef::Bool=false)
 	""" Iterates once on the debt price using next period's state """
 	δ, ℏ, ψ, σz, r = [sr.pars[sym] for sym in [:δ, :ℏ, :ψ, :σz, :r]]
 	qb = 0.0
@@ -50,7 +50,11 @@ function price_debt(sr::SOEres, xp, zv, νv, pz, pν, itp_def, itp_q)
 		jζp = 2 # Repayment
 		rep_normal = δ + (1-δ) * itp_q(bp,ap,zpv,νpv,sr.gr[:def][jζp])
 
-		def_prob = itp_def(bp,ap,zpv,νpv)
+		if jdef
+			def_prob = sr.pars[:θ]
+		else
+			def_prob = itp_def(bp,ap,zpv,νpv)
+		end
 
 		qb += prob * sdf * (def_prob * rep_default + (1-def_prob) * rep_normal)
 	end

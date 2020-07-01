@@ -114,6 +114,21 @@ function update_q!(sr::SOEres; tol::Float64=1e-6, maxiter::Int64=500, verbose::B
 	nothing
 end
 
+function get_eqm(sr::SOEres, bp, ap, state, pz, pν, jζ, itp_def, itp_q)
+	ζv = sr.gr[:def][jζ]
+	jdef = def_state(sr, jζ)
+
+	cT = budget_constraint_T(sr, state, pz, pν, [bp, ap], itp_def, itp_q, jdef)
+	hp = eq_h(sr, cT)
+	yN = prod_N(sr, hp)
+	yT = output_T(sr, state, jdef)
+
+	output = CES_aggregator(sr, yT, yN)
+	CA = yT - cT
+
+	new_eq = Dict([(:cT,cT), (:cN,yN), (:output,output), (:labor,hp), (:CA,CA)])
+end
+
 function update_eqm!(sr::SOEres)
 	itp_def = make_itp(sr, sr.v[:def])
 	itp_q = make_itp(sr, sr.eq[:qb])
@@ -130,20 +145,9 @@ function update_eqm!(sr::SOEres)
 		pν = sr.prob[:ν][jd[:ν],:]
 
 		for jζ in 1:2
-			ζv = sr.gr[:def][jζ]
-			jdef = def_state(sr, jζ)
-
 			bp, ap = [sr.ϕ[key][jv..., jζ] for key in [:b, :a]]
-
-			cT = budget_constraint_T(sr, state, pz, pν, [bp, ap], itp_def, itp_q, jdef)
-			hp = eq_h(sr, cT)
-			yN = prod_N(sr, hp)
-			yT = output_T(sr, state, jdef)
-
-			output = CES_aggregator(sr, yT, yN)
-			CA = yT - cT
-
-			new_eq = Dict([(:cT,cT), (:cN,yN), (:output,output), (:labor,hp), (:CA,CA)])
+			
+			new_eq = get_eqm(sr, bp, ap, state, pz, pν, jζ, itp_def, itp_q)
 			for (key, val) in new_eq
 				if haskey(sr.eq, key)
 					sr.eq[key][jv..., jζ] = val
