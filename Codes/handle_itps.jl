@@ -12,9 +12,9 @@ function make_itp(sr::SOEres{K,K1}, y::Array) where {K,K1}
 	# 	knots = (sr.gr[:b], sr.gr[:a], sr.gr[:z], sr.gr[:ν], sr.gr[:z], sr.gr[:ν])
 	end
 
-	itp_obj = interpolate(knots, y, Gridded(Linear()))
+	itp = interpolate(knots, y, Gridded(Linear()))
 
-	itp_obj = extrapolate(itp_obj, Interpolations.Line())
+	itp_obj = extrapolate(itp, Interpolations.Line())
 
 	return itp_obj
 end
