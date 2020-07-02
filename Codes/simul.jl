@@ -16,6 +16,8 @@ function iter_simul!(pp::Path{T}, sr::SOEres, t, itp_ϕb, itp_ϕa, itp_def, itp_
 	at = getfrompath(pp, t, :a)
 	bt = getfrompath(pp, t, :b)
 
+	state = Dict(:a=>at, :b=>bt, :z=>zt, :ν=>νt)
+
 	bp = itp_ϕb(bt, at, zt, νt, ζt)
 	ap = itp_ϕa(bt, at, zt, νt, ζt)
 
@@ -25,7 +27,7 @@ function iter_simul!(pp::Path{T}, sr::SOEres, t, itp_ϕb, itp_ϕa, itp_def, itp_
 
 	pNt = price_nontradable(sr, eqm_t[:cT], eqm_t[:cN])
 
-	qb = price_debt(sr, [bp,ap], zv, νv, pz, pν, itp_def, itp_q, jdef=def)
+	qb = price_debt(sr, [bp,ap], zt, νt, pz, pν, itp_def, itp_q, jdef=def)
 	qa = exp(-sr.pars[:r])
 
 	# Fill values of equilibrium at t
@@ -55,17 +57,24 @@ function iter_simul!(pp::Path{T}, sr::SOEres, t, itp_ϕb, itp_ϕa, itp_def, itp_
 		jζp = 2
 	end
 
+	newdef = 0
 	if def_prime && !def
 		bp = (1-sr.pars[:ℏ]) * bp
+		newdef = 1
+	end
+	reentry = 0
+	if def && !def_prime
+		reentry = 1
 	end
 
 	if t < T
-		fill_path!(pp, t+1, Dict(:b=>bp, :a=>ap, :jζ=>jζp, :jz=>jzp, :jν=>jνp, :ζ=>sr.gr[:def][jζp], :z=>zpv, :ν=>νpv))
+		fill_path!(pp, t+1, Dict(:b=>bp, :a=>ap, :jζ=>jζp, :jz=>jzp, :jν=>jνp, :ζ=>sr.gr[:def][jζp], :newdef => newdef, :reentry => reentry, :z=>zpv, :ν=>νpv))
 	end
 	nothing
 end
 
 function simul(sr::SOEres, simul_length=4*10000, burn_in=4*1000)
+	Random.seed!(1)
 	T = simul_length + burn_in
 
 	pp = Path(T=T)
@@ -74,9 +83,9 @@ function simul(sr::SOEres, simul_length=4*10000, burn_in=4*1000)
 	itp_ϕa = make_itp(sr, sr.ϕ[:a])
 	itp_def = make_itp(sr, sr.v[:def]);
 	itp_q  = make_itp(sr, sr.eq[:qb]);
-	itp_pz = interpolate((sr.gr[:z], sr.gr[:z]), Pz, Gridded(Linear()));
+	itp_pz = interpolate((sr.gr[:z], sr.gr[:z]), sr.prob[:z], Gridded(Linear()));
 
-	fill_path!(pp, 1, Dict(:jζ=>1, :jz=>1, :jν=>1, :a=>mean(sr.gr[:a]), :b=>mean(sr.gr[:b])))
+	fill_path!(pp, 1, Dict(:jζ=>2, :ζ=>sr.gr[:def][2], :jz=>1, :jν=>1, :a=>mean(sr.gr[:a]), :b=>mean(sr.gr[:b])))
 
 	for jt in 1:T
 		iter_simul!(pp, sr, jt, itp_ϕb, itp_ϕa, itp_def, itp_q, itp_pz)
