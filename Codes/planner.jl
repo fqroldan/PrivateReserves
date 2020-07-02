@@ -226,7 +226,15 @@ end
 function prob_extreme_value(sr::SOEres, vR, vD)
 	""" Apply extreme-value shocks formula """
 	κ = sr.pars[:κ]
-	return exp(vD/κ) / (exp(vR/κ) + exp(vD/κ))
+	prob = exp(vD/κ) / (exp(vR/κ) + exp(vD/κ))
+	if isnan(prob)
+		if vR > vD
+			return 0.0
+		else
+			return 1.0
+		end
+	end
+	return prob
 end
 
 function update_def!(sr::SOEres, new_v)
@@ -239,7 +247,7 @@ function update_def!(sr::SOEres, new_v)
 		jv = Jgrid[js,:]
 
 		state = S(sr, jv)
-		st = [state[key] for key in [:b,:a,:z,:ν]]
+		st = [state[key] for key in statenames(sr)]
 		st_def = corr(sr, st)
 
 		vR = new_v[:R][jv...]
@@ -298,8 +306,8 @@ function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=f
 
 		avg_time = (avg_time * (iter - 1) + t) / iter
 
-		dist_v = maximum([ sum((new_v[key] - old_v[key]).^2) / sum(old_v[key].^2) for key in keys(sr.v) ])
-		dist_ϕ = maximum([ sum((new_ϕ[key] - old_ϕ[key]).^2) / sum(old_ϕ[key].^2) for key in keys(sr.ϕ) ])
+		dist_v = maximum([ norm(new_v[key] - old_v[key]) / max(1,norm(old_v[key])) for key in keys(sr.v) ])
+		dist_ϕ = maximum([ norm(new_ϕ[key] - old_ϕ[key]) / max(1,norm(old_ϕ[key])) for key in keys(sr.ϕ) ])
 
 		dist = max(dist_v, dist_ϕ, dist_q)
 
