@@ -19,7 +19,7 @@ mutable struct Path{T} <: AbstractPath
 	data::Dict{Symbol, Vector{Float64}}
 end
 function Path(; T::Int64 = 1)
-	data = Dict( key => Vector{Float64}(undef, T) for key in [:b, :a, :jζ, :jz, :jν, :ζ, :z, :ν, :pN, :C, :cT, :cN, :CA, :output, :labor, :qa, :qb])
+	data = Dict( key => Vector{Float64}(undef, T) for key in [:b, :a, :jζ, :jz, :jν, :ζ, :z, :ν, :pN, :C, :cT, :cN, :CA, :output, :labor, :qa, :qb, :newdef, :reentry])
 	return Path{T}(data)
 end
 
@@ -72,7 +72,7 @@ function SOEres(;
 	β=1.05^-.25,	# Discount factor
 	γ=2.273,		# Risk aversion
 
-	κ=0.185,		# Scale parameter for Extreme Value default choice shock
+	κ=0.07,		# Scale parameter for Extreme Value default choice shock
 	δ=0.2845,		# Decay rate of government bonds
 	
 	πLH=0.15,		# Transition prob for shock to spreads
@@ -80,7 +80,7 @@ function SOEres(;
 	ψ=15,			# Inverse exposure of foreigners to domestic shock
 	θ=.04167,		# Reentry probability
 	ℏ=.4,			# Haircut on default
-	Δ=.03,			# Productivity loss in default
+	Δ=.05,			# Productivity loss in default
 
 	ϖ=0.6,			# Relative weight of nontradables
 	η=1/0.83-1,		# Elasticity of substitution btw T and N
@@ -92,7 +92,7 @@ function SOEres(;
 	σz=0.045,		# AR(1) for TFP in tradable sector
 
 	α=0.75, 		# Curvature of production function
-	Nb = 13,
+	Nb = 17,
 	Na = 13,
 	Nz = 9
 	)
@@ -101,7 +101,7 @@ function SOEres(;
 	μz = -0.5 * σz^2
 
 	bgrid = range(0,1.0,length=Nb)
-	agrid = range(0,0.5,length=Na)
+	agrid = range(0,1.0,length=Na)
 
 	zchain = tauchen(Nz, ρz, σz, μz, 1)
 	zgrid, Pz = zchain.state_values, zchain.p
