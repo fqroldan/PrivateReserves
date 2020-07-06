@@ -69,10 +69,10 @@ function quarterlize_AR1(ρ, σ)
 end
 
 function SOEres(;
-	β=1.05^-.25,	# Discount factor
+	β=1.12^-.25,	# Discount factor
 	γ=2.273,		# Risk aversion
 
-	κ=0.07,		# Scale parameter for Extreme Value default choice shock
+	κ=0.10,			# Scale parameter for Extreme Value default choice shock
 	δ=0.2845,		# Decay rate of government bonds
 	
 	πLH=0.15,		# Transition prob for shock to spreads
@@ -80,13 +80,13 @@ function SOEres(;
 	ψ=15,			# Inverse exposure of foreigners to domestic shock
 	θ=.04167,		# Reentry probability
 	ℏ=.4,			# Haircut on default
-	Δ=.05,			# Productivity loss in default
+	Δ=.075,			# Productivity loss in default
 
 	ϖ=0.6,			# Relative weight of nontradables
 	η=1/0.83-1,		# Elasticity of substitution btw T and N
 
 	wbar=0.95,		# Wage rigidity
-	r=1.04^.25-1,	# Risk-free rate
+	r=1.02^.25-1,	# Risk-free rate
 
 	ρz=0.84,		# AR(1) for TFP in tradable sector
 	σz=0.045,		# AR(1) for TFP in tradable sector
