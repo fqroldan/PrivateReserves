@@ -1,5 +1,5 @@
 println("Reserve Accumulation with a Private IIP")
-using QuantEcon, Interpolations, Optim, Dates, Printf, Random, JLD, PlotlyJS, ColorSchemes, ORCA, JSON
+using QuantEcon, Interpolations, LinearAlgebra, Optim, Dates, Printf, Random, JLD, PlotlyJS, ColorSchemes, ORCA, JSON
 
 include("type_def.jl")
 include("handle_itps.jl")
