@@ -80,7 +80,7 @@ function SOEres(;
 	ψ=15,			# Inverse exposure of foreigners to domestic shock
 	θ=.04167,		# Reentry probability
 	ℏ=.4,			# Haircut on default
-	Δ=.075,			# Productivity loss in default
+	Δ=.05,			# Productivity loss in default
 
 	ϖ=0.6,			# Relative weight of nontradables
 	η=1/0.83-1,		# Elasticity of substitution btw T and N
