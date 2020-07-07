@@ -184,12 +184,12 @@ function plot_simul(sr::SOEres, pp::Path)
 
 	print("$(length(defs)) defaults in $(floor(Int,periods(pp)/4)) years.\n")
 
-	shapes = [attr(type="rect", xref = "x", x0 = defs[jj]/1, x1=recs[jj]/1, yref ="paper", y0=0, y1=1, fillcolor="#bababa", opacity=0.2, line_width=0) for jj in 1:length(defs)];
+	shapes = [attr(type="rect", xref = "x", x0 = defs[jj]./4, x1=recs[jj]./4, yref ="paper", y0=0, y1=1, fillcolor="#bababa", opacity=0.2, line_width=0) for jj in 1:length(defs)];
 
 	data = [
-		scatter(x=(1:periods(pp))./1, yaxis="y2", y=100series(pp,:a)./(4*series(pp,:output)), name="<i>a/y")
-		scatter(x=(1:periods(pp))./1, yaxis="y2", y=100series(pp,:b)./(4*series(pp,:output)), name="<i>b/y")
-		scatter(x=(1:periods(pp))./1, yaxis="y1", y=100*(1 .- series(pp,:labor)), name="<i>unemp")
+		scatter(x=(1:periods(pp))./4, yaxis="y2", y=100series(pp,:a)./(4*series(pp,:output)), name="<i>a/y")
+		scatter(x=(1:periods(pp))./4, yaxis="y2", y=100series(pp,:b)./(4*series(pp,:output)), name="<i>b/y")
+		scatter(x=(1:periods(pp))./4, yaxis="y1", y=100*(1 .- series(pp,:labor)), name="<i>unemp")
 		]
 	layout = Layout(shapes=shapes,
 		yaxis1 = attr(domain=[0, 0.45]),
