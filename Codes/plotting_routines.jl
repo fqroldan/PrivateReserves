@@ -180,14 +180,21 @@ make_defprob(sr::SOEres, xkey::Symbol, ykey::Symbol; style::Style=slides_def, ev
 
 function plot_simul(sr::SOEres, pp::Path)
 	defs = [tt for tt in 1:periods(pp) if series(pp, :newdef)[tt] == 1 || (tt == 1 && series(pp, :ζ)[1] == 0)];
-	recs = [tt for tt in 1:periods(pp) if series(pp, :reentry)[tt] == 1];
+	recs = [tt for tt in 1:periods(pp) if series(pp, :reentry)[tt] == 1 || (tt == periods(pp) && series(pp,:ζ)[end] == 0)];
 
 	print("$(length(defs)) defaults in $(floor(Int,periods(pp)/4)) years.\n")
 
 	shapes = [attr(type="rect", xref = "x", x0 = defs[jj]/1, x1=recs[jj]/1, yref ="paper", y0=0, y1=1, fillcolor="#bababa", opacity=0.2, line_width=0) for jj in 1:length(defs)];
 
-	plot([
-		scatter(x=(1:periods(pp))./1, y=100series(pp,:a)./(4*series(pp,:output)), name="<i>a/y")
-       scatter(x=(1:periods(pp))./1, y=100series(pp,:b)./(4*series(pp,:output)), name="<i>b/y")
-       ], Layout(shapes=shapes), style=slides_def)
+	data = [
+		scatter(x=(1:periods(pp))./1, yaxis="y2", y=100series(pp,:a)./(4*series(pp,:output)), name="<i>a/y")
+		scatter(x=(1:periods(pp))./1, yaxis="y2", y=100series(pp,:b)./(4*series(pp,:output)), name="<i>b/y")
+		scatter(x=(1:periods(pp))./1, yaxis="y1", y=100*(1 .- series(pp,:labor)), name="<i>unemp")
+		]
+	layout = Layout(shapes=shapes,
+		yaxis1 = attr(domain=[0, 0.45]),
+		yaxis2 = attr(domain=[0.55, 1]),
+		)
+
+	plot(data, layout, style=slides_def)
 end
