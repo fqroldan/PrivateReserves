@@ -85,7 +85,7 @@ function SOEres(;
 	ϖ=0.6,			# Relative weight of nontradables
 	η=1/0.83-1,		# Elasticity of substitution btw T and N
 
-	wbar=0.95,		# Wage rigidity
+	wbar=0.6,		# Wage rigidity
 	r=1.02^.25-1,	# Risk-free rate
 
 	ρz=0.84,		# AR(1) for TFP in tradable sector
