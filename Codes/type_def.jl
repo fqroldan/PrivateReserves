@@ -85,7 +85,7 @@ function SOEres(;
 	ϖ=0.55,			# Relative weight of nontradables
 	η=1/0.83-1,		# Elasticity of substitution btw T and N
 
-	wbar=0.6,		# Wage rigidity
+	wbar=0.7,		# Wage rigidity
 	r=1.02^.25-1,	# Risk-free rate
 
 	ρz=0.84,		# AR(1) for TFP in tradable sector
@@ -100,7 +100,7 @@ function SOEres(;
 	ρz, σz = quarterlize_AR1(ρz, σz)
 	μz = -0.5 * σz^2
 
-	bgrid = range(0,3.0,length=Nb)
+	bgrid = range(0,5.0,length=Nb)
 	agrid = range(0,3.0,length=Na)
 
 	zchain = tauchen(Nz, ρz, σz, μz, 1)
