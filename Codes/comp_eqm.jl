@@ -2,11 +2,11 @@ using Printf, Interpolations
 
 function repayment_def(sr::SOEres, qv, qvd, jζ, jζp)
 	""" Use future q and reentry/default probs to calculate repayment """
-	θ, κ, δ, ℏ = [sr.pars[sym] for sym in [:θ, :κ, :δ, :ℏ]]
+	θ, κC, δ, ℏ = [sr.pars[sym] for sym in [:θ, :κC, :δ, :ℏ]]
 
 	rep = 0.0
 	if jζp == 2 # Reentry to markets or normal repayment
-		rep = κ + (1-δ) * qv
+		rep = κC + (1-δ) * qv
 	elseif jζ == 1 # Default in t and t+1
 		rep = qv
 	elseif jζ == 2 # Defaulted at t+1
@@ -101,6 +101,8 @@ function update_q!(sr::SOEres; tol::Float64=1e-6, maxiter::Int64=500, verbose::B
 
 		sr.eq[:qb] = old_q + upd_η * (new_q - old_q)
 	end
+
+	sr.eq[:qa] = ones(size(sr.eq[:qa])) * exp(-sr.pars[:r])
 
 	tT = time()
 	if dist <= tol

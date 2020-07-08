@@ -69,10 +69,10 @@ function quarterlize_AR1(ρ, σ)
 end
 
 function SOEres(;
-	β=1.12^-.25,	# Discount factor
+	β=1.06^-.25,	# Discount factor
 	γ=2.273,		# Risk aversion
 
-	κ=0.05,			# Scale parameter for Extreme Value default choice shock
+	κV=0.05,		# Scale parameter for Extreme Value default choice shock
 	δ=0.2845,		# Decay rate of government bonds
 	
 	πLH=0.15,		# Transition prob for shock to spreads
@@ -82,7 +82,7 @@ function SOEres(;
 	ℏ=.4,			# Haircut on default
 	Δ=.05,			# Productivity loss in default
 
-	ϖ=0.6,			# Relative weight of nontradables
+	ϖ=0.55,			# Relative weight of nontradables
 	η=1/0.83-1,		# Elasticity of substitution btw T and N
 
 	wbar=0.6,		# Wage rigidity
@@ -100,8 +100,8 @@ function SOEres(;
 	ρz, σz = quarterlize_AR1(ρz, σz)
 	μz = -0.5 * σz^2
 
-	bgrid = range(0,1.0,length=Nb)
-	agrid = range(0,1.0,length=Na)
+	bgrid = range(0,3.0,length=Nb)
+	agrid = range(0,3.0,length=Na)
 
 	zchain = tauchen(Nz, ρz, σz, μz, 1)
 	zgrid, Pz = zchain.state_values, zchain.p
@@ -132,7 +132,7 @@ function SOEres(;
 	repay = ones(Nb, Na, Nz, Nν, Nz, Nν)
 
 
-	pars = Dict{Symbol, Float64}(:β=>β, :γ=>γ, :κ=>κ, :δ=>δ, :πLH=>πLH, :πHL=>πHL, :ψ=>ψ, :ϖT=>ϖ, :ϖN=>1-ϖ, :η=>η, :wbar=>wbar, :r=>r, :ρz=>ρz, :σz=>σz, :α=>α, :θ=>θ, :ℏ=>ℏ, :Δ=>Δ, :ρz=>ρz, :σz=>σz, :μz=>μz)
+	pars = Dict{Symbol, Float64}(:β=>β, :γ=>γ, :κV=>κV, :δ=>δ, :κC=>δ+exp(r)-1, :πLH=>πLH, :πHL=>πHL, :ψ=>ψ, :ϖT=>ϖ, :ϖN=>1-ϖ, :η=>η, :wbar=>wbar, :r=>r, :ρz=>ρz, :σz=>σz, :α=>α, :θ=>θ, :ℏ=>ℏ, :Δ=>Δ, :ρz=>ρz, :σz=>σz, :μz=>μz)
 	opt = Dict{Symbol, Bool}()
 	gr = Dict{Symbol, Vector{Float64}}(:b=>bgrid, :a=>agrid, :z=>zgrid, :ν=>νgrid, :def=>0:1)
 	prob = Dict(:z=>Pz, :ν=>Pν)
