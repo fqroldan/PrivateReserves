@@ -287,6 +287,8 @@ function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=f
 	avg_time = 0.0
 	dist_v, dist_ϕ = zeros(2)
 
+	upd_ηq = 0.5
+
 	t0 = time()
 	while dist > tol && iter < maxiter
 		iter += 1
@@ -295,6 +297,7 @@ function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=f
 		""" Update debt prices (for use as next period prices) """
 		update_q!(sr, verbose = false)
 		dist_q = sum( (sr.eq[:qb]-old_q).^2 ) / sum(old_q.^2)
+		sr.eq[:qb] = old_q + upd_ηq * (sr.eq[:qb] - old_q)
 
 		old_v = copy(sr.v)
 		old_ϕ = copy(sr.ϕ)
