@@ -187,13 +187,15 @@ function plot_simul(sr::SOEres, pp::Path)
 	shapes = [attr(type="rect", xref = "x", x0 = defs[jj]./4, x1=recs[jj]./4, yref ="paper", y0=0, y1=1, fillcolor="#bababa", opacity=0.2, line_width=0) for jj in 1:length(defs)];
 
 	data = [
-		scatter(x=(1:periods(pp))./4, yaxis="y2", y=100series(pp,:a)./(4*series(pp,:output)), name="<i>a/y")
-		scatter(x=(1:periods(pp))./4, yaxis="y2", y=100series(pp,:b)./(4*series(pp,:output)), name="<i>b/y")
-		scatter(x=(1:periods(pp))./4, yaxis="y1", y=100*(1 .- series(pp,:labor)), name="<i>unemp")
+		scatter(x=(1:periods(pp))./4, yaxis="y3", y=100series(pp,:a)./(4*series(pp,:output)), name="<i>a/y")
+		scatter(x=(1:periods(pp))./4, yaxis="y3", y=100series(pp,:b)./(4*series(pp,:output)), name="<i>b/y")
+		scatter(x=(1:periods(pp))./4, yaxis="y2", y=100*(1 .- series(pp,:labor)), name="<i>unemp")
+		scatter(x=(1:periods(pp))./4, yaxis="y1", y=exp.(series(pp,:z)), name="<i>TFP")
 		]
 	layout = Layout(shapes=shapes,
-		yaxis1 = attr(domain=[0, 0.45]),
-		yaxis2 = attr(domain=[0.55, 1]),
+		yaxis1 = attr(domain=[0, 0.3]),
+		yaxis2 = attr(domain=[0.33, 0.67], title="<i>%"),
+		yaxis3 = attr(domain=[0.7, 1], title="<i>% of GDP"),
 		)
 
 	plot(data, layout, style=slides_def)
