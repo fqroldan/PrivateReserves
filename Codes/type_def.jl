@@ -69,7 +69,7 @@ function quarterlize_AR1(ρ, σ)
 end
 
 function SOEres(;
-	β=1.04^-.25,	# Discount factor
+	β=1.06^-.25,	# Discount factor
 	γ=2.273,		# Risk aversion
 
 	κV=0.05,		# Scale parameter for Extreme Value default choice shock
