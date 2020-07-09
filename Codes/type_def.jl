@@ -72,7 +72,7 @@ function SOEres(;
 	β=1.06^-.25,	# Discount factor
 	γ=2.273,		# Risk aversion
 
-	κV=0.05,		# Scale parameter for Extreme Value default choice shock
+	κV=0.18,		# Scale parameter for Extreme Value default choice shock
 	δ=0.2845,		# Decay rate of government bonds
 	
 	πLH=0.15,		# Transition prob for shock to spreads
