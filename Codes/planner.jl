@@ -273,8 +273,7 @@ function vfi_iter(sr::SOEres)
 	return new_v, new_ϕ
 end
 
-function update_sr!(y, new_y)
-	upd_η = 0.75
+function update_sr!(y, new_y; upd_η = 1)
 	for key in keys(y)
 		y[key] = y[key] + upd_η * (new_y[key] - y[key])
 	end
@@ -287,7 +286,7 @@ function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=f
 	avg_time = 0.0
 	dist_v, dist_ϕ = zeros(2)
 
-	upd_ηq = 0.5
+	# upd_ηq = 0.75
 
 	t0 = time()
 	while dist > tol && iter < maxiter
@@ -297,7 +296,7 @@ function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=f
 		""" Update debt prices (for use as next period prices) """
 		update_q!(sr, verbose = false)
 		dist_q = sum( (sr.eq[:qb]-old_q).^2 ) / sum(old_q.^2)
-		sr.eq[:qb] = old_q + upd_ηq * (sr.eq[:qb] - old_q)
+		# sr.eq[:qb] = old_q + upd_ηq * (sr.eq[:qb] - old_q)
 
 		old_v = copy(sr.v)
 		old_ϕ = copy(sr.ϕ)
@@ -314,8 +313,8 @@ function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=f
 
 		dist = max(dist_v, dist_ϕ, dist_q)
 
-		update_sr!(sr.v, new_v)
-		update_sr!(sr.ϕ, new_ϕ)
+		update_sr!(sr.v, new_v, upd_η = 1)
+		update_sr!(sr.ϕ, new_ϕ, upd_η = 0.25)
 
 		# for key in keys(sr.v)
 		# 	print("||$(key)|| = $(norm(sr.v[key]))\n")
