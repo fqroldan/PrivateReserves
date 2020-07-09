@@ -121,6 +121,7 @@ function get_eqm(sr::SOEres, bp, ap, state, pz, pν, jζ, itp_def, itp_q)
 	jdef = def_state(sr, jζ)
 
 	cT = budget_constraint_T(sr, state, pz, pν, [bp, ap], itp_def, itp_q, jdef)
+	cT = max(0.0, cT)
 	hp = eq_h(sr, cT)
 	yN = prod_N(sr, hp)
 	yT = output_T(sr, state, jdef)
