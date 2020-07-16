@@ -1,4 +1,4 @@
-function iter_simul!(pp::Path{T}, sr::SOEres, t, itp_ϕb, itp_ϕa, itp_def, itp_q, itp_pz) where T
+function iter_simul!(pp::Path{T}, sr::SOEres, t, itp_ϕb, itp_ϕa, itp_def, itp_qb, itp_qa, itp_pz) where T
 
 	jζ = Int(getfrompath(pp, t, :jζ))
 	jz = Int(getfrompath(pp, t, :jz))
@@ -21,13 +21,14 @@ function iter_simul!(pp::Path{T}, sr::SOEres, t, itp_ϕb, itp_ϕa, itp_def, itp_
 	bp = itp_ϕb(bt, at, zt, νt, ζt)
 	ap = itp_ϕa(bt, at, zt, νt, ζt)
 
-	eqm_t = get_eqm(sr, bp, ap, state, pz, pν, jζ, itp_def, itp_q)
+	qav = itp_qa(bp,ap,zt,νt,ζt)
+	eqm_t = get_eqm(sr, bp, ap, state, pz, pν, jζ, itp_def, qav, itp_qb)
 
 	C = CES_aggregator(sr, eqm_t[:cT], eqm_t[:cN])
 
 	pNt = price_nontradable(sr, eqm_t[:cT], eqm_t[:cN])
 
-	qb = price_debt(sr, [bp,ap], zt, νt, pz, pν, itp_def, itp_q, jdef=def)
+	qb = price_debt(sr, [bp,ap], zt, νt, pz, pν, itp_def, itp_qb, jdef=def)
 	qa = exp(-sr.pars[:r])
 
 	# Fill values of equilibrium at t
@@ -82,13 +83,14 @@ function simul(sr::SOEres, simul_length=4*10000, burn_in=4*1000)
 	itp_ϕb = make_itp(sr, sr.ϕ[:b])
 	itp_ϕa = make_itp(sr, sr.ϕ[:a])
 	itp_def = make_itp(sr, sr.v[:def]);
-	itp_q  = make_itp(sr, sr.eq[:qb]);
+	itp_qa  = make_itp(sr, sr.eq[:qa]);
+	itp_qb  = make_itp(sr, sr.eq[:qb]);
 	itp_pz = interpolate((sr.gr[:z], sr.gr[:z]), sr.prob[:z], Gridded(Linear()));
 
 	fill_path!(pp, 1, Dict(:jζ=>2, :ζ=>sr.gr[:def][2], :jz=>1, :jν=>1, :a=>mean(sr.gr[:a]), :b=>mean(sr.gr[:b])))
 
 	for jt in 1:T
-		iter_simul!(pp, sr, jt, itp_ϕb, itp_ϕa, itp_def, itp_q, itp_pz)
+		iter_simul!(pp, sr, jt, itp_ϕb, itp_ϕa, itp_def, itp_qb, itp_qa, itp_pz)
 	end
 	return trim_path(pp, burn_in)
 end

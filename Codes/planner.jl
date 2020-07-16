@@ -43,7 +43,7 @@ function price_debt(sr::SOEres, xp, zv, νv, pz, pν, itp_def, itp_q; jdef::Bool
 		prob = pz[jzp] * pν[jνp]
 
 		ϵpv = innov_z(sr, zpv, zv)
-		sdf = exp(-r - νv * (ψ * ϵpv - 0.5 * ψ^2*σz^2))
+		sdf = SDF(sr, νv, ϵpv)
 
 		jζp = 1 # Default
 		rep_default= (1-ℏ) * itp_q(bp*(1-ℏ),ap,zpv,νpv,sr.gr[:def][jζp])
@@ -61,14 +61,14 @@ function price_debt(sr::SOEres, xp, zv, νv, pz, pν, itp_def, itp_q; jdef::Bool
 	return qb
 end
 
-function budget_constraint_T(sr::SOEres, state, pz, pν, xp, itp_def, itp_q, jdef::Bool)
+function budget_constraint_T(sr::SOEres, state, pz, pν, xp, itp_def, itp_q, qav, jdef::Bool)
 	""" Computes consumption of T given state and choices of new debt and reserves """
 
 	yT = output_T(sr, state, jdef)
 	δv = bond_decay(sr, jdef)
 
 	bv, av, zv, νv = [state[key] for key in [:b, :a, :z, :ν]]
-	qa = exp(-sr.pars[:r])
+	# qa = exp(-sr.pars[:r])
 
 	bp, ap = xp
 
@@ -78,13 +78,13 @@ function budget_constraint_T(sr::SOEres, state, pz, pν, xp, itp_def, itp_q, jde
 		debt_operations = qb * (bp - (1-δv) * bv) - sr.pars[:κC] * bv
 	end
 
-	cT = yT + av - qa*ap + debt_operations
+	cT = yT + av - qav*ap + debt_operations
 	return cT
 end
 
-function budget_constraint_agg(sr::SOEres, state, pz, pν, xp, itp_def, itp_q, jdef::Bool)
+function budget_constraint_agg(sr::SOEres, state, pz, pν, xp, itp_def, itp_q, qav, jdef::Bool)
 	""" Computes aggregate of C at state and choices of new debt and reserves """
-	cT = budget_constraint_T(sr, state, pz, pν, xp, itp_def, itp_q, jdef)
+	cT = budget_constraint_T(sr, state, pz, pν, xp, itp_def, itp_q, qav, jdef)
 
 	cT = max(0.0, cT)
 
@@ -95,7 +95,7 @@ function budget_constraint_agg(sr::SOEres, state, pz, pν, xp, itp_def, itp_q, j
 	return c
 end
 
-function value(sr::SOEres, state, pz, pν, bp, ap, itp_v, itp_vd, itp_def, itp_q, jdef::Bool)
+function value(sr::SOEres, state, pz, pν, bp, ap, itp_v, itp_vd, itp_def, itp_q, qav, jdef::Bool)
 	""" Computes V given state and choices of consumption, debt, reserves """
 	θ, ℏ, β = [sr.pars[sym] for sym in [:θ, :ℏ, :β]]
 
@@ -106,7 +106,7 @@ function value(sr::SOEres, state, pz, pν, bp, ap, itp_v, itp_vd, itp_def, itp_q
 	# bp = max(bp, minimum(sr.gr[:b]))
 	# bp = min(bp, maximum(sr.gr[:b]))
 
-	c = budget_constraint_agg(sr, state, pz, pν, xp, itp_def, itp_q, jdef)
+	c = budget_constraint_agg(sr, state, pz, pν, xp, itp_def, itp_q, qav, jdef)
 	ut = utility(sr, c)
 
 	vp = 0.0
@@ -125,7 +125,7 @@ function value(sr::SOEres, state, pz, pν, bp, ap, itp_v, itp_vd, itp_def, itp_q
 	return vt
 end
 
-function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q)
+function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q, qav)
 	""" Choose ap ≥ 0, bp ≥ 0 default with prob sr.gov[:repay] """
 	jζ = 2 # IN REPAYMENT
 	jdef = def_state(sr, jζ)
@@ -134,12 +134,13 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 	xguess = [guess[key][jζ] for key in [:b, :a]]
 	xmin = [minimum(sr.gr[key]) for key in [:b, :a]]
 	xmax = [maximum(sr.gr[key]) for key in [:b, :a]]
+	xmax[1] = max(0.5*xmax[1], min(xmax[1], 2*state[:b]))
 
-	obj_f(x) = -value(sr, state, pz, pν, x[1], x[2], itp_v, itp_vd, itp_def, itp_q, jdef)
-	res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(NelderMead()))
+	obj_f(x) = -value(sr, state, pz, pν, x[1], x[2], itp_v, itp_vd, itp_def, itp_q, qav, jdef)
+	res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(BFGS()))
 
 	if !Optim.converged(res)
-		res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(BFGS()))
+		res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(NelderMead()))
 	end
 	
 	!Optim.converged(res) && println("WARNING: DIDN'T FIND SOL IN R")
@@ -150,12 +151,12 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 
 	ϕ = Dict(:a=>apv, :b=>bpv)
 
-	ccv = budget_constraint_agg(sr, state, pz, pν, x_opt, itp_def, itp_q, jdef)
+	ccv = budget_constraint_agg(sr, state, pz, pν, x_opt, itp_def, itp_q, qav, jdef)
 	ϕ[:c] = ccv
 	return ϕ, vR
 end
 
-function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q)
+function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q, qav)
 	""" Choose ap between 0 and a, bp = bv, reenter mkts w prob θ """
 	bpv = state[:b]
 	jζ = 1 # IN DEFAULT
@@ -166,7 +167,7 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 	xmin = [minimum(sr.gr[key]) for key in [:a]]
 	xmax = [maximum(sr.gr[key]) for key in [:a]]
 
-	obj_f(x) = -value(sr, state, pz, pν, bpv, x[1], itp_v, itp_vd, itp_def, itp_q, jdef)
+	obj_f(x) = -value(sr, state, pz, pν, bpv, x[1], itp_v, itp_vd, itp_def, itp_q, qav, jdef)
 	res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(GradientDescent()))
 
 	!Optim.converged(res) && println("WARNING: DIDN'T FIND SOL IN D")
@@ -177,7 +178,7 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 
 	ϕ = Dict(:a=>apv, :b=>bpv)
 	
-	ccv = budget_constraint_agg(sr, state, pz, pν, [bpv, apv], itp_def, itp_q, jdef)
+	ccv = budget_constraint_agg(sr, state, pz, pν, [bpv, apv], itp_def, itp_q, qav, jdef)
 	ϕ[:c] = ccv
 	return ϕ, vD
 end
@@ -199,9 +200,18 @@ function solve_optvalue(sr::SOEres, itp_v, itp_vd, itp_def, itp_q)
 
 		guess = Dict(key => val[jv...,:] for (key,val) in sr.ϕ)
 
+		qaD, qaR = zeros(2)
+		for jζ = 1:2
+			if def_state(sr, jζ) == 1
+				qaD = sr.eq[:qa][jv..., jζ]
+			else
+				qaR = sr.eq[:qa][jv..., jζ]
+			end
+		end
+
 		""" New xp and values in repayment and default """
-		ϕR, vR = opt_value_R(sr, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q)
-		ϕD, vD = opt_value_D(sr, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q)
+		ϕR, vR = opt_value_R(sr, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q, qaR)
+		ϕD, vD = opt_value_D(sr, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q, qaD)
 
 		""" Repayment probability as function of values """
 		prob_rep = prob_extreme_value(sr, vR, vD)

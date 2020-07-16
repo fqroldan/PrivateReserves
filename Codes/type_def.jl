@@ -80,7 +80,7 @@ function SOEres(;
 	ψ=15,			# Inverse exposure of foreigners to domestic shock
 	θ=.04167,		# Reentry probability
 	ℏ=.4,			# Haircut on default
-	Δ=.05,			# Productivity loss in default
+	Δ=.075,			# Productivity loss in default
 
 	ϖ=0.55,			# Relative weight of nontradables
 	η=1/0.83-1,		# Elasticity of substitution btw T and N
@@ -92,7 +92,7 @@ function SOEres(;
 	σz=0.045,		# AR(1) for TFP in tradable sector
 
 	α=0.75, 		# Curvature of production function
-	Nb = 17,
+	Nb = 11,
 	Na = 13,
 	Nz = 9
 	)
@@ -117,7 +117,7 @@ function SOEres(;
 
 	K = length(size(R))
 
-	bp = ones(Nb, Na, Nz, Nν, 2) * mean(bgrid)
+	bp = ones(Nb, Na, Nz, Nν, 2) * mean(bgrid) * 0.75
 	ap = ones(Nb, Na, Nz, Nν, 2) * mean(agrid)
 	cc = ones(Nb, Na, Nz, Nν, 2) * 0.5
 	
@@ -195,4 +195,10 @@ function price_index(sr::SOEres, pN, pT = 1)
 	ϖN, ϖT, η = [sr.pars[key] for key in [:ϖN, :ϖT, :η]]
 
 	return (ϖN^(1/(1+η)) * pN^(η/(1+η)) + ϖT^(1/(1+η)) * pT^(η/(1+η)))^((1+η)/η)
+end
+
+function SDF(sr::SOEres, νv, ϵpv)
+	ψ, σz, r = [sr.pars[sym] for sym in [:ψ, :σz, :r]]
+
+	return exp(-r - νv * (ψ * ϵpv + 0.5 * ψ^2*σz^2))
 end
