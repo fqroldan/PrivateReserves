@@ -137,10 +137,10 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 	xmax[1] = max(0.5*xmax[1], min(xmax[1], 2*state[:b]))
 
 	obj_f(x) = -value(sr, state, pz, pν, x[1], x[2], itp_v, itp_vd, itp_def, itp_q, qav, jdef)
-	res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(BFGS()))
+	res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(NelderMead()))
 
 	if !Optim.converged(res)
-		res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(NelderMead()))
+		res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(GradientDescent()))
 	end
 	
 	!Optim.converged(res) && println("WARNING: DIDN'T FIND SOL IN R")
@@ -167,8 +167,10 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 	xmin = [minimum(sr.gr[key]) for key in [:a]]
 	xmax = [maximum(sr.gr[key]) for key in [:a]]
 
-	obj_f(x) = -value(sr, state, pz, pν, bpv, x[1], itp_v, itp_vd, itp_def, itp_q, qav, jdef)
-	res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(GradientDescent()))
+	# obj_f(x) = -value(sr, state, pz, pν, bpv, x[1], itp_v, itp_vd, itp_def, itp_q, qav, jdef)
+	# res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(GradientDescent()))
+	obj_f(apv) = -value(sr, state, pz, pν, bpv, apv, itp_v, itp_vd, itp_def, itp_q, qav, jdef)
+	res = Optim.optimize(obj_f, first(xmin), first(xmax), GoldenSection())
 
 	!Optim.converged(res) && println("WARNING: DIDN'T FIND SOL IN D")
 
@@ -283,7 +285,7 @@ function vfi_iter(sr::SOEres)
 	return new_v, new_ϕ
 end
 
-function update_sr!(y, new_y; upd_η = 1)
+function update_sr!(y, new_y, upd_η = 1)
 	for key in keys(y)
 		y[key] = y[key] + upd_η * (new_y[key] - y[key])
 	end
@@ -296,42 +298,46 @@ function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=f
 	avg_time = 0.0
 	dist_v, dist_ϕ = zeros(2)
 
-	# upd_ηq = 0.75
+	upd_η = 0.25
 
 	t0 = time()
 	while dist > tol && iter < maxiter
 		iter += 1
 
-		old_q = copy(sr.eq[:qb])
+		old_q = copy(sr.eq[:qb]);
 		""" Update debt prices (for use as next period prices) """
-		update_q!(sr, verbose = false)
+		update_q!(sr, verbose = verbose)
 		dist_q = sum( (sr.eq[:qb]-old_q).^2 ) / sum(old_q.^2)
 		# sr.eq[:qb] = old_q + upd_ηq * (sr.eq[:qb] - old_q)
-
-		old_v = copy(sr.v)
-		old_ϕ = copy(sr.ϕ)
+		norm_q = norm(sr.eq[:qb])
 
 		t1 = time()
 		""" Iterate on the value functions """
-		new_v, new_ϕ = vfi_iter(sr)
+		new_v, new_ϕ = vfi_iter(sr);
 		t = time() - t1
 
 		avg_time = (avg_time * (iter - 1) + t) / iter
 
-		dist_v = maximum([ norm(new_v[key] - old_v[key]) / max(1,norm(old_v[key])) for key in keys(sr.v) ])
-		dist_ϕ = maximum([ norm(new_ϕ[key] - old_ϕ[key]) / max(1,norm(old_ϕ[key])) for key in keys(sr.ϕ) ])
+		dist_v = maximum([ norm(new_v[key] - sr.v[key]) / max(1,norm(sr.v[key])) for key in keys(sr.v) ])
+		dist_ϕ = maximum([ norm(new_ϕ[key] - sr.ϕ[key]) / max(1,norm(sr.ϕ[key])) for key in keys(sr.ϕ) ])
 
+		norm_v = maximum([norm(sr.v[key]) for key in keys(sr.v)])
+		norm_ϕ = maximum([norm(sr.ϕ[key]) for key in keys(sr.ϕ)])
+		
 		dist = max(dist_v, dist_ϕ, dist_q)
 
-		update_sr!(sr.v, new_v, upd_η = 1)
-		update_sr!(sr.ϕ, new_ϕ, upd_η = 0.25)
+		update_sr!(sr.v, new_v, upd_η)
+		update_sr!(sr.ϕ, new_ϕ, upd_η)
+
+		upd_η = max(upd_η * 0.995, 5e-2)
 
 		# for key in keys(sr.v)
 		# 	print("||$(key)|| = $(norm(sr.v[key]))\n")
 		# end
 
-		if verbose && iter % 10 == 0
+		if verbose && iter % 1 == 0
 			print("After $iter iterations (avg time = $(time_print(avg_time))), d(v,ϕ,q) = $(@sprintf("%0.3g",dist_v)), $(@sprintf("%0.3g",dist_ϕ)), $(@sprintf("%0.3g",dist_q)) \n")
+			print("||v,ϕ,q|| = $(@sprintf("%0.3g",norm_v)), $(@sprintf("%0.3g",norm_ϕ)), $(@sprintf("%0.3g",norm_q)) \n")
 		end
 	end
 
