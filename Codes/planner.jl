@@ -249,10 +249,10 @@ function prob_extreme_value(sr::SOEres, vR, vD)
 	return prob
 end
 
-function update_def!(sr::SOEres)
+function update_def!(sr::SOEres, new_v=sr.v)
 	""" Computes default prob and value of entering period in repayment """
-	""" Uses 'updated' sr.v[:D] and sr.v[:R] """
-	itp_vd = make_itp(sr,sr.v[:D]);
+	""" Uses 'updated' sr.v[:D] and sr.v[:R] by default """
+	itp_vd = make_itp(sr,new_v[:D]);
 	ℏ = sr.pars[:ℏ]
 
 	Jgrid = agg_grid(sr);
@@ -263,13 +263,13 @@ function update_def!(sr::SOEres)
 		st = [state[key] for key in statenames(sr)]
 		st_def = corr(sr, st)
 
-		vR = sr.v[:R][jv...]
+		vR = new_v[:R][jv...]
 		vD = itp_vd(st_def...)
 
 		def_prob = prob_extreme_value(sr,vR,vD)
 
-		sr.v[:def][jv...] = def_prob
-		sr.v[:V][jv...] = def_prob * vD + (1-def_prob) * vR
+		new_v[:def][jv...] = def_prob
+		new_v[:V][jv...] = def_prob * vD + (1-def_prob) * vR
 	end
 end
 
@@ -281,7 +281,8 @@ function vfi_iter(sr::SOEres)
 	itp_q  = make_itp(sr, sr.eq[:qb]);
 
 	new_v, new_ϕ = solve_optvalue(sr, itp_v, itp_vd, itp_def, itp_q);
-
+	update_def!(sr, new_v)
+	
 	return new_v, new_ϕ
 end
 
