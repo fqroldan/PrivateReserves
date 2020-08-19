@@ -299,7 +299,7 @@ function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=1000, verbose::Bool=
 	avg_time = 0.0
 	dist_v, dist_ϕ = zeros(2)
 
-	upd_η = 0.25
+	upd_η = 0.75
 
 	t0 = time()
 	while dist > tol && iter < maxiter
