@@ -249,9 +249,10 @@ function prob_extreme_value(sr::SOEres, vR, vD)
 	return prob
 end
 
-function update_def!(sr::SOEres, new_v)
+function update_def!(sr::SOEres)
 	""" Computes default prob and value of entering period in repayment """
-	itp_vd = make_itp(sr,new_v[:D]);
+	""" Uses 'updated' sr.v[:D] and sr.v[:R] """
+	itp_vd = make_itp(sr,sr.v[:D]);
 	ℏ = sr.pars[:ℏ]
 
 	Jgrid = agg_grid(sr);
@@ -262,13 +263,13 @@ function update_def!(sr::SOEres, new_v)
 		st = [state[key] for key in statenames(sr)]
 		st_def = corr(sr, st)
 
-		vR = new_v[:R][jv...]
+		vR = sr.v[:R][jv...]
 		vD = itp_vd(st_def...)
 
 		def_prob = prob_extreme_value(sr,vR,vD)
 
-		new_v[:def][jv...] = def_prob
-		new_v[:V][jv...] = def_prob * vD + (1-def_prob) * vR
+		sr.v[:def][jv...] = def_prob
+		sr.v[:V][jv...] = def_prob * vD + (1-def_prob) * vR
 	end
 end
 
@@ -280,7 +281,6 @@ function vfi_iter(sr::SOEres)
 	itp_q  = make_itp(sr, sr.eq[:qb]);
 
 	new_v, new_ϕ = solve_optvalue(sr, itp_v, itp_vd, itp_def, itp_q);
-	update_def!(sr, new_v)
 
 	return new_v, new_ϕ
 end
@@ -327,6 +327,7 @@ function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=1000, verbose::Bool=
 		dist = max(dist_v, dist_ϕ, dist_q)
 
 		update_sr!(sr.v, new_v, upd_η)
+		update_def!(sr) # To update [:def] and [:V] consistently with [:D], [:R]
 		update_sr!(sr.ϕ, new_ϕ, upd_η)
 
 		upd_η = max(upd_η * 0.995, 1e-2)
