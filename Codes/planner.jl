@@ -292,7 +292,7 @@ function update_sr!(y, new_y, upd_η = 1)
 	nothing
 end
 
-function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=false)
+function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=1000, verbose::Bool=false)
 	""" Main Loop """
 	iter, dist = 0, 1+tol
 	avg_time = 0.0
@@ -307,7 +307,7 @@ function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=f
 		old_q = copy(sr.eq[:qb]);
 		""" Update debt prices (for use as next period prices) """
 		update_q!(sr, verbose = verbose)
-		dist_q = sum( (sr.eq[:qb]-old_q).^2 ) / sum(old_q.^2)
+		dist_q = norm(sr.eq[:qb]-old_q) / max(1,norm(old_q))
 		# sr.eq[:qb] = old_q + upd_ηq * (sr.eq[:qb] - old_q)
 		norm_q = norm(sr.eq[:qb])
 
@@ -329,7 +329,7 @@ function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=f
 		update_sr!(sr.v, new_v, upd_η)
 		update_sr!(sr.ϕ, new_ϕ, upd_η)
 
-		upd_η = max(upd_η * 0.995, 5e-2)
+		upd_η = max(upd_η * 0.995, 1e-2)
 
 		# for key in keys(sr.v)
 		# 	print("||$(key)|| = $(norm(sr.v[key]))\n")
@@ -337,7 +337,8 @@ function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=f
 
 		if verbose && iter % 1 == 0
 			print("After $iter iterations (avg time = $(time_print(avg_time))), d(v,ϕ,q) = $(@sprintf("%0.3g",dist_v)), $(@sprintf("%0.3g",dist_ϕ)), $(@sprintf("%0.3g",dist_q)) \n")
-			print("||v,ϕ,q|| = $(@sprintf("%0.3g",norm_v)), $(@sprintf("%0.3g",norm_ϕ)), $(@sprintf("%0.3g",norm_q)) \n")
+			print("‖v,ϕ,q‖ = $(@sprintf("%0.3g",norm_v)), $(@sprintf("%0.3g",norm_ϕ)), $(@sprintf("%0.3g",norm_q)) \n")
+			print("upd_η = $(@sprintf("%0.3g", upd_η))\n")
 		end
 	end
 
