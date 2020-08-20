@@ -1,4 +1,4 @@
-using QuantEcon
+using QuantEcon, Distributions
 
 mutable struct SOEres{K, Kd}
 	pars::Dict{Symbol, Float64}
@@ -68,6 +68,11 @@ function quarterlize_AR1(ρ, σ)
 	return ρ4, σ4
 end
 
+function move_grids!(xgrid; xmin=0.0, xmax=1.0)
+	xgrid[:] = xgrid[:] * (xmax-xmin) .+ xmin
+ 	nothing
+ end
+
 function SOEres(;
 	β=1.06^-.25,	# Discount factor
 	γ=2.273,		# Risk aversion
@@ -94,14 +99,18 @@ function SOEres(;
 	α=0.75, 		# Curvature of production function
 	Nb = 11,
 	Na = 13,
-	Nz = 9
+	Nz = 9,
+	bmax = 5.0,
+	amax = 3.0
 	)
 	
 	ρz, σz = quarterlize_AR1(ρz, σz)
 	μz = -0.5 * σz^2
 
-	bgrid = range(0,5.0,length=Nb)
-	agrid = range(0,3.0,length=Na)
+	bgrid = cdf.(Beta(2,1), range(0,1,length=Nb))
+	agrid = cdf.(Beta(2,1), range(0,1,length=Na))
+	move_grids!(bgrid, xmax=bmax)	
+	move_grids!(agrid, xmax=amax)
 
 	zchain = tauchen(Nz, ρz, σz, μz, 1)
 	zgrid, Pz = zchain.state_values, zchain.p
