@@ -293,13 +293,13 @@ function update_sr!(y, new_y, upd_η = 1)
 	nothing
 end
 
-function vfi!(sr::SOEres; tol::Float64=1e-4, maxiter::Int64=1000, verbose::Bool=false)
+function vfi!(sr::SOEres; tol::Float64=5e-4, maxiter::Int64=1000, verbose::Bool=false)
 	""" Main Loop """
 	iter, dist = 0, 1+tol
 	avg_time = 0.0
 	dist_v, dist_ϕ = zeros(2)
 
-	upd_η = 0.5
+	upd_η = 0.75
 
 	t0 = time()
 	while dist > tol && iter < maxiter
