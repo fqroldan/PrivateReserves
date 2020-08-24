@@ -69,7 +69,7 @@ function iterate_q(sr::SOEres, itp_q, itp_def)
 					ζpv = sr.gr[:def][jζp]
 					qvp = itp_q(bpv, apv, zpv, νpv, ζpv)
 					qvd = itp_q((1-ℏ)*bpv, apv, zpv, νpv, ζpv)
-					qnb += prob * prob_def(sr, jζ, jζp, defp) * repayment_def(sr,qvp,qvd,jζ, jζp) * sdf
+					qnb += prob * prob_def(sr, jζ, jζp, defp) * repayment_def(sr, qvp, qvd, jζ, jζp) * sdf
 				end
 				qna += prob * sdf * 1
 			end
