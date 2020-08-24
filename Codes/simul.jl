@@ -28,12 +28,13 @@ function iter_simul!(pp::Path{T}, sr::SOEres, t, itp_ϕb, itp_ϕa, itp_def, itp_
 
 	pNt = price_nontradable(sr, eqm_t[:cT], eqm_t[:cN])
 
-	qb = price_debt(sr, [bp,ap], zt, νt, pz, pν, itp_def, itp_qb, jdef=def)
 	qa = exp(-sr.pars[:r])
+	qb = price_debt(sr, [bp,ap], zt, νt, pz, pν, itp_def, itp_qb, jdef=def)
+	spr_b = (1 + sr.pars[:κ] * (1/qb - 1))^4 - 1
 
 	# Fill values of equilibrium at t
 	fill_path!(pp, t, eqm_t)
-	fill_path!(pp, t, Dict(:pN=>pNt, :C=>C, :qb=>qb, :qa=>qa))
+	fill_path!(pp, t, Dict(:pN=>pNt, :C=>C, :qb=>qb, :spread=>spr_b, :qa=>qav))
 
 	# Draw shocks for t+1
 	probz = cumsum(pz)
@@ -43,12 +44,14 @@ function iter_simul!(pp::Path{T}, sr::SOEres, t, itp_ϕb, itp_ϕa, itp_def, itp_
 
 	zpv = sr.gr[:z][jzp]
 	νpv = sr.gr[:ν][jνp]
-	
+
 	if def
 		def_prob = (1-sr.pars[:θ])
 	else
 		def_prob = itp_def(bp,ap,zpv,νpv)
 	end
+
+	fill_path!(pp, t, Dict(:π=>def_prob))
 
 	def_prime = rand() < def_prob
 

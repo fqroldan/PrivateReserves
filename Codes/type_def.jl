@@ -19,7 +19,7 @@ mutable struct Path{T} <: AbstractPath
 	data::Dict{Symbol, Vector{Float64}}
 end
 function Path(; T::Int64 = 1)
-	data = Dict( key => Vector{Float64}(undef, T) for key in [:b, :a, :jζ, :jz, :jν, :ζ, :z, :ν, :pN, :C, :cT, :cN, :CA, :output, :labor, :qa, :qb, :newdef, :reentry])
+	data = Dict( key => Vector{Float64}(undef, T) for key in [:b, :a, :jζ, :jz, :jν, :ζ, :z, :ν, :pN, :C, :cT, :cN, :CA, :output, :labor, :qa, :qb, :spread, :newdef, :reentry, :π])
 	return Path{T}(data)
 end
 
@@ -94,7 +94,7 @@ function SOEres(;
 	r=1.02^.25-1,	# Risk-free rate
 
 	ρz=0.84,		# AR(1) for TFP in tradable sector
-	σz=0.045,		# AR(1) for TFP in tradable sector
+	σz=0.02,		# AR(1) for TFP in tradable sector
 
 	α=0.75, 		# Curvature of production function
 	Nb = 11,
