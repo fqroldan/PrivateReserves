@@ -178,7 +178,7 @@ make_debtprice(sr::SOEres, xkey::Symbol, ykey::Symbol; style::Style=slides_def, 
 make_defprob(sr::SOEres, xkey::Symbol, ykey::Symbol; style::Style=slides_def, eval_points::Dict{Symbol,Int64}=Dict{Symbol,Int64}()) = make_contour(sr, sr.v, :def, xkey, ykey, style=style, eval_points=eval_points)
 
 
-function plot_simul(sr::SOEres, pp::Path)
+function plot_simul(sr::SOEres, pp::Path; style::Style=slides_def)
 	defs = [tt for tt in 1:periods(pp) if series(pp, :newdef)[tt] == 1 || (tt == 1 && series(pp, :ζ)[1] == 0)];
 	recs = [tt for tt in 1:periods(pp) if series(pp, :reentry)[tt] == 1 || (tt == periods(pp) && series(pp,:ζ)[end] == 0)];
 
@@ -192,11 +192,11 @@ function plot_simul(sr::SOEres, pp::Path)
 		scatter(x=(1:periods(pp))./4, yaxis="y2", y=100*(1 .- series(pp,:labor)), name="<i>unemp")
 		scatter(x=(1:periods(pp))./4, yaxis="y1", y=exp.(series(pp,:z)), name="<i>TFP")
 		]
-	layout = Layout(shapes=shapes,
+	layout = Layout(shapes=shapes, height = style.layout[:height]*1.1,
 		yaxis1 = attr(domain=[0, 0.3]),
 		yaxis2 = attr(domain=[0.33, 0.67], title="<i>%"),
 		yaxis3 = attr(domain=[0.7, 1], title="<i>% of GDP"),
 		)
 
-	plot(data, layout, style=slides_def)
+	plot(data, layout, style=style)
 end
