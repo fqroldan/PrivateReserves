@@ -200,3 +200,24 @@ function plot_simul(sr::SOEres, pp::Path; style::Style=slides_def)
 
 	plot(data, layout, style=style)
 end
+
+function plot_IRF(β; style::Style=slides_def)
+
+	H = size(β,1)
+
+	data = [
+		scatter(;x=0:H, y=β[:,1], hoverinfo="skip",line_color="#1f77b4", name="βₕ")
+		scatter(;x=0:H, y=β[:,3], hoverinfo="skip",line_width=1e-5, showlegend=false, name="βl")
+		scatter(;x=0:H, y=β[:,2], fill="tonexty", line_color="#bbd6e8", line_width=1e-5, showlegend=false, name="βh")
+	]
+
+	layout = Layout(
+		# xaxis = attr(zeroline=false, title=xaxistitle),
+		# yaxis = attr(zeroline=false, title=yaxistitle),
+		legend = attr(orientation="h", x=0.1),
+		shapes = [hline(0, line_dash="dot", line_width=0.5)],
+	)
+
+	plot(data, layout, style=style)
+end
+	

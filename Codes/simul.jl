@@ -97,3 +97,39 @@ function simul(sr::SOEres, simul_length=4*10000, burn_in=4*1000)
 	end
 	return trim_path(pp, burn_in)
 end
+
+function compute_IRF(Y::Vector, x::Vector; H::Int64=20)
+
+	β = zeros(H+1,3)
+
+	for jh in 1:H+1
+		yh = Y[2+jh:end]
+		xh = x[2:end-jh]
+
+		yl = Y[1:end-jh-1]
+
+		data = DataFrame(y=yh, x=xh, yl=yl)
+
+		OLS = glm(@formula(y ~ 0 + yl + x), data, Normal(), IdentityLink())
+
+		β[jh,1] = coef(OLS)[2]
+		β[jh,2] = coef(OLS)[2] + stderror(OLS)[1]*1.96
+		β[jh,3] = coef(OLS)[2] - stderror(OLS)[1]*1.96
+	end
+
+	return β
+end
+
+function IRF_z(sr::SOEres, pp::Path, y::Symbol; H = 20)
+
+	x = series(pp, :z)
+	x1 = x[2:end]
+	x = x[1:end-1]
+	ϵ = x1 - sr.pars[:ρz] * x
+
+	Y = series(pp, y)[1:end-1]
+
+	β = compute_IRF(Y, ϵ, H=H)
+
+	return β
+end
