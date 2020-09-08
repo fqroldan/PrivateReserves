@@ -136,6 +136,13 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 	xmax = [maximum(sr.gr[key]) for key in [:b, :a]]
 	xmax[1] = max(0.5*xmax[1], min(xmax[1], 2*state[:b]))
 
+	# xguess *= 0.01
+	c_guess = budget_constraint_agg(sr, state, pz, pν, xguess, itp_def, itp_q, qav, jdef)
+	if c_guess < 1e-2
+		xguess[1] = xmax[1] * 0.99
+		xguess[2] *= 0.01
+	end
+
 	obj_f(x) = -value(sr, state, pz, pν, x[1], x[2], itp_v, itp_vd, itp_def, itp_q, qav, jdef)
 	res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(NelderMead()))
 
