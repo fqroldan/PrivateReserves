@@ -9,24 +9,26 @@ function utility(c, γ)
 	end
 end
 
-function prod_N(sr::SOEres, h)
+function prod_N(sr::SOEres, h, jdef)
 	""" Computes production of nontradables at input h """
-	yN = h^sr.pars[:α]
+
+	yN = (1-sr.pars[:Δ]*jdef) * h^sr.pars[:α]
+	# yN = h^sr.pars[:α]
 	return yN
 end
 
-function H(sr::SOEres, cT, w)
+function H(sr::SOEres, cT, w, jdef)
 	""" Computes labor supply consistent with consumption of tradables + wage """
 	α, η, ϖN, ϖT = [sr.pars[key] for key in [:α, :η, :ϖN, :ϖT]]
 
-	return (ϖN/ϖT * α/w)^(1/(1+α*η)) * cT^((1+η)/(1+α*η))
+	return (ϖN/ϖT * (1-sr.pars[:Δ]*jdef) * α/w)^(1/(1+α*η)) * cT^((1+η)/(1+α*η))
 end
 
-function eq_h(sr::SOEres, cT)
+function eq_h(sr::SOEres, cT, jdef)
 	""" Computes labor supply consistent with consumption of tradables """
 	Ls = 1
 
-	h = H(sr, cT, sr.pars[:wbar])
+	h = H(sr, cT, sr.pars[:wbar], jdef)
 	labor = min(h, Ls)
 	return labor
 end
@@ -88,8 +90,8 @@ function budget_constraint_agg(sr::SOEres, state, pz, pν, xp, itp_def, itp_q, q
 
 	cT = max(0.0, cT)
 
-	h = eq_h(sr, cT)
-	yN = prod_N(sr, h)
+	h = eq_h(sr, cT, jdef)
+	yN = prod_N(sr, h, jdef)
 	c = CES_aggregator(sr, cT, yN)
 
 	return c
@@ -244,8 +246,8 @@ end
 
 function prob_extreme_value(sr::SOEres, vR, vD)
 	""" Apply extreme-value shocks formula """
-	κV = sr.pars[:κV]
-	prob = exp(vD/κV) / (exp(vR/κV) + exp(vD/κV))
+	σV = sr.pars[:σV]
+	prob = exp(vD/σV) / (exp(vR/σV) + exp(vD/σV))
 	if isnan(prob)
 		if vR > vD
 			return 0.0

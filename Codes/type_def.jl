@@ -77,7 +77,7 @@ function SOEres(;
 	β=1.06^-.25,	# Discount factor
 	γ=2.273,		# Risk aversion
 
-	κV=0.18,		# Scale parameter for Extreme Value default choice shock
+	σV=0.18,		# Scale parameter for Extreme Value default choice shock
 	δ=0.2845,		# Decay rate of government bonds
 	
 	πLH=0.15,		# Transition prob for shock to spreads
@@ -141,7 +141,7 @@ function SOEres(;
 	repay = ones(Nb, Na, Nz, Nν, Nz, Nν)
 
 
-	pars = Dict{Symbol, Float64}(:β=>β, :γ=>γ, :κV=>κV, :δ=>δ, :κC=>δ+exp(r)-1, :πLH=>πLH, :πHL=>πHL, :ψ=>ψ, :ϖT=>ϖ, :ϖN=>1-ϖ, :η=>η, :wbar=>wbar, :r=>r, :ρz=>ρz, :σz=>σz, :α=>α, :θ=>θ, :ℏ=>ℏ, :Δ=>Δ, :ρz=>ρz, :σz=>σz, :μz=>μz)
+	pars = Dict{Symbol, Float64}(:β=>β, :γ=>γ, :σV=>σV, :δ=>δ, :κC=>δ+exp(r)-1, :πLH=>πLH, :πHL=>πHL, :ψ=>ψ, :ϖT=>ϖ, :ϖN=>1-ϖ, :η=>η, :wbar=>wbar, :r=>r, :ρz=>ρz, :σz=>σz, :α=>α, :θ=>θ, :ℏ=>ℏ, :Δ=>Δ, :ρz=>ρz, :σz=>σz, :μz=>μz)
 	opt = Dict{Symbol, Bool}()
 	gr = Dict{Symbol, Vector{Float64}}(:b=>bgrid, :a=>agrid, :z=>zgrid, :ν=>νgrid, :def=>0:1)
 	prob = Dict(:z=>Pz, :ν=>Pν)

@@ -121,8 +121,8 @@ function get_eqm(sr::SOEres, bp, ap, state, pz, pν, jζ, itp_def, qav, itp_q)
 
 	cT = budget_constraint_T(sr, state, pz, pν, [bp, ap], itp_def, itp_q, qav, jdef)
 	cT = max(0.0, cT)
-	hp = eq_h(sr, cT)
-	yN = prod_N(sr, hp)
+	hp = eq_h(sr, cT, jdef)
+	yN = prod_N(sr, hp, jdef)
 	yT = output_T(sr, state, jdef)
 
 	output = CES_aggregator(sr, yT, yN)
