@@ -120,10 +120,10 @@ function makeplot_sr(sr::SOEres, srdict::Dict{Symbol, Array{Float64, K}}, ykey::
 	return p1
 end
 
-function make_contour(sr::SOEres, srd::Dict, zkey::Symbol, xkey::Symbol, ykey::Symbol; style::Style=slides_def, eval_points::Dict{Symbol,Int64}=Dict{Symbol,Int64}())
+function make_contour(sr::SOEres, srd::Dict, zkey::Symbol, xkey::Symbol, ykey::Symbol; style::Style=slides_def, eval_points::Dict{Symbol,Int64}=Dict{Symbol,Int64}(), reversecol=false)
 	y = grab_mat(sr, srd[zkey], xkey, ykey, eval_points=eval_points)
 
-	data = contour(x=sr.gr[xkey], y=sr.gr[ykey], z=y)
+	data = contour(x=sr.gr[xkey], y=sr.gr[ykey], z=y, reversescale=reversecol)
 
 	layout = Layout(xaxis_title="<i>"*string(xkey), yaxis_title="<i>"*string(ykey))
 
@@ -173,7 +173,7 @@ function make_comp_V(sr::SOEres, xkey::Symbol, ykey::Symbol=:nothing; style::Sty
 	end
 end
 
-make_debtprice(sr::SOEres, xkey::Symbol, ykey::Symbol; style::Style=slides_def, eval_points::Dict{Symbol,Int64}=Dict{Symbol,Int64}()) = make_contour(sr, sr.eq, :qb, xkey, ykey, style=style, eval_points=eval_points)
+make_debtprice(sr::SOEres, xkey::Symbol, ykey::Symbol; style::Style=slides_def, eval_points::Dict{Symbol,Int64}=Dict{Symbol,Int64}()) = make_contour(sr, sr.eq, :qb, xkey, ykey, style=style, eval_points=eval_points, reversecol=true)
 
 make_defprob(sr::SOEres, xkey::Symbol, ykey::Symbol; style::Style=slides_def, eval_points::Dict{Symbol,Int64}=Dict{Symbol,Int64}()) = make_contour(sr, sr.v, :def, xkey, ykey, style=style, eval_points=eval_points)
 
