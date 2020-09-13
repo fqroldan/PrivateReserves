@@ -30,7 +30,7 @@ function iter_simul!(pp::Path{T}, sr::SOEres, t, itp_ϕb, itp_ϕa, itp_def, itp_
 
 	qa = exp(-sr.pars[:r])
 	qb = price_debt(sr, [bp,ap], zt, νt, pz, pν, itp_def, itp_qb, jdef=def)
-	spr_b = (1 + sr.pars[:κC] * (1/qb - 1))^4 - 1
+	spr_b = (1 + sr.pars[:κ] * (1/qb - 1))^4 - 1
 
 	# Fill values of equilibrium at t
 	fill_path!(pp, t, eqm_t)

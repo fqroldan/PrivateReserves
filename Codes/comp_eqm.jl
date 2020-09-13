@@ -2,11 +2,11 @@ using Printf, Interpolations
 
 function repayment_def(sr::SOEres, qv, qvd, jζ, jζp)
 	""" Use future q and reentry/default probs to calculate repayment """
-	θ, κC, δ, ℏ = [sr.pars[sym] for sym in [:θ, :κC, :δ, :ℏ]]
+	θ, κ, δ, ℏ = [sr.pars[sym] for sym in [:θ, :κ, :δ, :ℏ]]
 
 	rep = 0.0
 	if def_state(sr, jζp) == false # Reentry to markets or normal repayment
-		rep = κC + (1-δ) * qv
+		rep = κ + (1-δ) * qv
 	elseif def_state(sr, jζ) == true # Default in t and t+1
 		rep = qv
 	elseif def_state(sr, jζ) == false # Defaulted at t+1

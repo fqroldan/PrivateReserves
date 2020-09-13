@@ -43,7 +43,7 @@ Main problem in repayment
 \begin{align}
 	V^R(b,a,\state) = \max_{b',a',c_T, h} &\; u(c_T, F(h)) + \beta \ex{\mathcal{V}\left(b',a',\state'\right)} \\
 	\text{subject to }
-	& c_T + q_a a' + \kappa^C b = a + y_T(\state) + q_b(b',a',\state) (b' - (1-\delta) b) \notag\\
+	& c_T + q_a a' + \kappa b = a + y_T(\state) + q_b(b',a',\state) (b' - (1-\delta) b) \notag\\
 	& h \leq \mathcal{H}(c_T, \bar{w}) \notag
 \end{align}
 
@@ -70,7 +70,7 @@ Stochastic discount factor
 \begin{align}
 	m(\state, \state') &= \exp(-r - \nu (\psi \epsilon' + 0.5 \psi^2\sigma_\epsilon^2)) \qquad \epsilon' = \log(y') - \rho\log(y) - (1-\rho)\mu_y\\
 	q_a &= \exp(-r) \\
-	q_b(b',a',\state) &= \ex{ m(\state,\state') \left(\ind_\mathcal{D'} (1-\hslash) q_b(b',a',\state') + (1-\ind_\mathcal{D'})(\kappa^C + (1-\delta)q_b(b',a',\state')) \right) }
+	q_b(b',a',\state) &= \ex{ m(\state,\state') \left(\ind_\mathcal{D'} (1-\hslash) q_b(b',a',\state') + (1-\ind_\mathcal{D'})(\kappa + (1-\delta)q_b(b',a',\state')) \right) }
 \end{align}
 
 \paragraph{Private economy}

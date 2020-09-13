@@ -141,7 +141,7 @@ function SOEres(;
 	repay = ones(Nb, Na, Nz, Nν, Nz, Nν)
 
 
-	pars = Dict{Symbol, Float64}(:β=>β, :γ=>γ, :σV=>σV, :δ=>δ, :κC=>δ+exp(r)-1, :πLH=>πLH, :πHL=>πHL, :ψ=>ψ, :ϖT=>ϖ, :ϖN=>1-ϖ, :η=>η, :wbar=>wbar, :r=>r, :ρz=>ρz, :σz=>σz, :α=>α, :θ=>θ, :ℏ=>ℏ, :Δ=>Δ, :ρz=>ρz, :σz=>σz, :μz=>μz)
+	pars = Dict{Symbol, Float64}(:β=>β, :γ=>γ, :σV=>σV, :δ=>δ, :κ=>δ+exp(r)-1, :πLH=>πLH, :πHL=>πHL, :ψ=>ψ, :ϖT=>ϖ, :ϖN=>1-ϖ, :η=>η, :wbar=>wbar, :r=>r, :ρz=>ρz, :σz=>σz, :α=>α, :θ=>θ, :ℏ=>ℏ, :Δ=>Δ, :ρz=>ρz, :σz=>σz, :μz=>μz)
 	opt = Dict{Symbol, Bool}()
 	gr = Dict{Symbol, Vector{Float64}}(:b=>bgrid, :a=>agrid, :z=>zgrid, :ν=>νgrid, :def=>0:1)
 	prob = Dict(:z=>Pz, :ν=>Pν)

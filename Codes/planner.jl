@@ -38,7 +38,7 @@ output_T(sr::SOEres, state, jdef) = exp(state[:z]) * (1-sr.pars[:Δ]*jdef)
 
 function price_debt(sr::SOEres, xp, zv, νv, pz, pν, itp_def, itp_q; jdef::Bool=false)
 	""" Iterates once on the debt price using next period's state """
-	δ, κC, ℏ, ψ, σz, r = [sr.pars[sym] for sym in [:δ, :κC, :ℏ, :ψ, :σz, :r]]
+	δ, κ, ℏ, ψ, σz, r = [sr.pars[sym] for sym in [:δ, :κ, :ℏ, :ψ, :σz, :r]]
 	qb = 0.0
 	bp, ap = xp
 	for (jzp, zpv) in enumerate(sr.gr[:z]), (jνp, νpv) in enumerate(sr.gr[:ν])
@@ -50,7 +50,7 @@ function price_debt(sr::SOEres, xp, zv, νv, pz, pν, itp_def, itp_q; jdef::Bool
 		jζp = 1 # Default
 		rep_default= (1-ℏ) * itp_q(bp*(1-ℏ),ap,zpv,νpv,sr.gr[:def][jζp])
 		jζp = 2 # Repayment
-		rep_normal = κC + (1-δ) * itp_q(bp,ap,zpv,νpv,sr.gr[:def][jζp])
+		rep_normal = κ + (1-δ) * itp_q(bp,ap,zpv,νpv,sr.gr[:def][jζp])
 
 		if jdef
 			def_prob = sr.pars[:θ]
@@ -77,7 +77,7 @@ function budget_constraint_T(sr::SOEres, state, pz, pν, xp, itp_def, itp_q, qav
 	debt_operations = 0.0
 	if !jdef
 		qb = price_debt(sr, xp, zv, νv, pz, pν, itp_def, itp_q)
-		debt_operations = qb * (bp - (1-δv) * bv) - sr.pars[:κC] * bv
+		debt_operations = qb * (bp - (1-δv) * bv) - sr.pars[:κ] * bv
 	end
 
 	cT = yT + av - qav*ap + debt_operations
