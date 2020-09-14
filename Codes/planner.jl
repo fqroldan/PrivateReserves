@@ -141,8 +141,8 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 	# xguess *= 0.01
 	c_guess = budget_constraint_agg(sr, state, pz, pν, xguess, itp_def, itp_q, qav, jdef)
 	if c_guess < 1e-2
-		xguess[1] = xmax[1] * 0.99
-		xguess[2] *= 0.01
+		xguess[1] = state[:b] + 1e-2 * (.5*xmax[1]+.5*xmin[1] - state[:b])
+		xguess[2] = 0.01
 	end
 
 	obj_f(x) = -value(sr, state, pz, pν, x[1], x[2], itp_v, itp_vd, itp_def, itp_q, qav, jdef)
@@ -176,10 +176,16 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 	xmin = [minimum(sr.gr[key]) for key in [:a]]
 	xmax = [maximum(sr.gr[key]) for key in [:a]]
 
+	c_guess = budget_constraint_agg(sr, state, pz, pν, [bpv, xguess[1]], itp_def, itp_q, qav, jdef)
+	if c_guess < 1e-2
+		# xguess[1] = xmax[1] * 0.99
+		xguess[1] = 1e-6
+	end
+
 	# obj_f(x) = -value(sr, state, pz, pν, bpv, x[1], itp_v, itp_vd, itp_def, itp_q, qav, jdef)
 	# res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(GradientDescent()))
-	obj_f(apv) = -value(sr, state, pz, pν, bpv, apv, itp_v, itp_vd, itp_def, itp_q, qav, jdef)
-	res = Optim.optimize(obj_f, first(xmin), first(xmax), GoldenSection())
+	obj_f(apv) = -value(sr, state, pz, pν, bpv, first(apv), itp_v, itp_vd, itp_def, itp_q, qav, jdef)
+	res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(GradientDescent()))
 
 	!Optim.converged(res) && println("WARNING: DIDN'T FIND SOL IN D")
 
@@ -340,7 +346,7 @@ function vfi!(sr::SOEres; tol::Float64=5e-4, maxiter::Int64=1000, verbose::Bool=
 		update_def!(sr) # To update [:def] and [:V] consistently with [:D], [:R]
 		update_sr!(sr.ϕ, new_ϕ, upd_η)
 
-		# upd_η = max(upd_η * 0.995, 5e-2)
+		upd_η = max(upd_η * 0.99, 0.1)
 
 		# for key in keys(sr.v)
 		# 	print("||$(key)|| = $(norm(sr.v[key]))\n")

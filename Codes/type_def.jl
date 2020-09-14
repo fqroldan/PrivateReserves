@@ -100,7 +100,7 @@ function SOEres(;
 	Nb = 11,
 	Na = 13,
 	Nz = 9,
-	bmax = 5.0,
+	bmax = 4.0,
 	amax = 3.0
 	)
 	
