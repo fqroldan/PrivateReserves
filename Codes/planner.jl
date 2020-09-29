@@ -314,7 +314,7 @@ function vfi!(sr::SOEres; tol::Float64=5e-4, maxiter::Int64=1000, verbose::Bool=
 	avg_time = 0.0
 	dist_v, dist_ϕ = zeros(2)
 
-	upd_η = 0.75
+	upd_η = 0.9
 
 	t0 = time()
 	while dist > tol && iter < maxiter
@@ -346,7 +346,7 @@ function vfi!(sr::SOEres; tol::Float64=5e-4, maxiter::Int64=1000, verbose::Bool=
 		update_def!(sr) # To update [:def] and [:V] consistently with [:D], [:R]
 		update_sr!(sr.ϕ, new_ϕ, upd_η)
 
-		upd_η = max(upd_η * 0.99, 0.1)
+		upd_η = max(upd_η * 0.995, 0.4)
 
 		# for key in keys(sr.v)
 		# 	print("||$(key)|| = $(norm(sr.v[key]))\n")
