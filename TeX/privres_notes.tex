@@ -5,7 +5,7 @@
 
 \title{Reserve Accumulation with a Private IIP\thanks{The views expressed herein are those of the authors and should not be attributed to the IMF, its Executive Board, or its management. \acknowledgements}}
 
-\author{\href{https://fqroldan.github.io}{Francisco Rold\'{a}n}\thanks{e-mail: \href{mailto:froldan@imf.org}{\emph{froldan@imf.org}}}\\IMF \and \href{https://sosapadilla.github.io}{C\'{e}sar Sosa-Padilla}\thanks{e-mail: \href{mailto:csosapad@nd.edu}{\emph{csosapad@nd.edu}}} \\University of Notre Dame,\\ Princeton IES, and NBER}
+\author{\href{https://fqroldan.github.io}{Francisco Rold\'{a}n}\thanks{e-mail: \href{mailto:froldan@imf.org}{\emph{froldan@imf.org}}}\\IMF \and \href{https://sosapadilla.github.io}{C\'{e}sar Sosa-Padilla}\thanks{e-mail: \href{mailto:csosapad@nd.edu}{\emph{csosapad@nd.edu}}} \\University of Notre Dame\\and NBER}
 
 \ifdefined\ungated
 \else
@@ -76,7 +76,7 @@ Stochastic discount factor
 \paragraph{Private economy}
 Preferences
 \begin{align}
-	u(c_T,c_N) = \left[ \varpi_N c_N^{-\eta} + \varpi_T c_T^{-\eta} \right]^{-\frac{1}{\eta}}
+	u(c_T,c_N) = \left[ \varpi_N c_N^{-\eta} + \varpi_T c_T^{-\eta} \right]^{-\frac{1}{\eta}} \qquad p_N = \frac{\varpi_N}{\varpi_T} \pfrac{c_T}{c_N}^{1+\eta}
 \end{align}
 for $\varpi_N + \varpi_T = 1$.
 
@@ -108,4 +108,48 @@ Wage rigidities
 	\caption{Default probability}
 \end{figure}
 
+\section{Model with private savings}
+We maintain the assumption that the government collects lump-sum taxes from the representative agent. But now the representative agent is also able to buy risk-free securities in international markets.
+
+Because of the possibility of lump-sum taxation, the state variable for the economy is the sum of government-held and private-held `reserves.' When choosing the savings position of the economy, the government is bound by the private sector's Euler equation, except if the constraint on non-negative savings binds for the representative agent. Therefore,
+
+\begin{align}
+	V^R(b,a,\state) = \max_{b', a', c_T, h} &\; u(c_T, F(h)) + \beta \ex{\mathcal{V}(b',a',\state')} \\
+	\text{subject to }
+	& c_T + q_a a' + \kappa b = a + y_T(\state) + q_b(b',a',\state) (b' - (1-\delta) b) \notag\\
+	& h \leq \mathcal{H}(c_T, \bar{w}) \notag\\
+	& u_T(c_T, F(h)) q_a \geq \beta \ex{u_T(c_T', F(h'))}\notag
+\end{align}
+
+Similarly, the value in default is now
+\begin{align}
+	V^D(b,a,\state) = \max_{a',c_T, h} &\; u(c_T, F(h)) + \beta \ex{ \theta \mathcal{V}(b,a',\state') + (1-\theta) V^D(b,a',\state) } \\
+	\text{subject to }
+	& c_T + q_a a' = a + \mathcal{D}(y_T(\state)) \notag \\
+	& h \leq \mathcal{H}(c_T, \bar{w}) \notag \\
+	& u_T(c_T, F(h)) q_a \geq \beta \ex{u_T(c_T', F(h'))} \notag
+\end{align}
+
+\paragraph{Choice variables} As before, in equilibrium $h = \min\{1,\mathcal{H}(c_T, \bar{w})\}$. So a two-step procedure could be (i) find the set $A(b) = [a_{\min}(b), a_{\max}(b)]$ where $a$ can be chosen respecting the private Euler equation (using the previous formula and the budget constraint for $h$ and $c_T$) and (ii) choose $b$ and $\theta \in [0,1]$ (with $a = a_{\min}(b) + \theta (a_{\max}(b) - a_{\min}(b)$).
+
+\paragraph{Decentralized formulation}
+The government has reserves $a$, the representative agent has savings $k$. The government collects lump-sum taxes $T$. Their choices are summarized by
+\begin{align}
+	w^R(b,a,k,T,\state) = \max_{c_T, c_N, k'} &\; u(c_T, c_N) + \beta \ex{w(b',a',k',T',\state')} \\
+	\text{subject to } 
+	& c_T + q_a k' + p_N c_N = k + y_T(\state) + p_N y_N - T \notag
+\end{align}
+We obtain the following first-order conditions, where also applying market clearing conditions $c_N = y_N$
+\begin{align*}
+	p_N &= \frac{\varpi_N}{\varpi_T} \pfrac{c_T}{F(h)}^{1+\eta} \\
+	u_T(c_T, F(h)) q_a &\geq \beta \ex{u_T(c_T', F(h'))}
+\end{align*}
+The intratemporal condition is the same as the planner's as this choice between consumption of both goods is undistorted in the equilibrium (the planner does not need a second tax instrument to match the wedge in the consumption allocation decision).
+
+The planner's problem is
+\begin{align}
+	v^R(b,a,k,\state) = \max_{b',a',T} &\; u(c_T, F(h)) + \beta \ex{v(b',a',k',\state')} \\
+	\text{subject to }
+	& q_a a' + \kappa b = q_b b' + a + T \notag
+\end{align}
 \end{document}
