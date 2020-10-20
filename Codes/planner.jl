@@ -145,18 +145,26 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 		xguess[2] = 0.01
 	end
 
-	obj_f(x) = -value(sr, state, pz, pν, x[1], x[2], itp_v, itp_vd, itp_def, itp_q, qav, jdef)
-	res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(NelderMead()))
+	obj_f(x) = value(sr, state, pz, pν, x[1], x[2], itp_v, itp_vd, itp_def, itp_q, qav, jdef)
+	# res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox())
+	# if !Optim.converged(res)
+	# 	res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox())
+	# end
+	# !Optim.converged(res) && println("WARNING: DIDN'T FIND SOL IN R")
+	# x_opt = res.minimizer
+	# bpv, apv = x_opt
+	# vR = -obj_f(x_opt)
 
-	if !Optim.converged(res)
-		res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(GradientDescent()))
-	end
+	opt = Opt(:LN_PRAXIS, length(xguess))
+	opt.lower_bounds = xmin
+	opt.upper_bounds = xmax
+	# opt.xtol_rel = 1e-16
 	
-	!Optim.converged(res) && println("WARNING: DIDN'T FIND SOL IN R")
-	
-	x_opt = res.minimizer
+	F(x,g) = obj_f(x)
+	opt.max_objective = F
+	maxf, x_opt, ret = NLopt.optimize(opt, xguess)
 	bpv, apv = x_opt
-	vR = -obj_f(x_opt)
+	vR = maxf
 
 	ϕ = Dict(:a=>apv, :b=>bpv)
 
@@ -184,14 +192,26 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 
 	# obj_f(x) = -value(sr, state, pz, pν, bpv, x[1], itp_v, itp_vd, itp_def, itp_q, qav, jdef)
 	# res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(GradientDescent()))
-	obj_f(apv) = -value(sr, state, pz, pν, bpv, first(apv), itp_v, itp_vd, itp_def, itp_q, qav, jdef)
-	res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox(GradientDescent()))
+	obj_f(apv) = value(sr, state, pz, pν, bpv, first(apv), itp_v, itp_vd, itp_def, itp_q, qav, jdef)
+	# res = Optim.optimize(obj_f, xmin, xmax, xguess, Fminbox())
 
-	!Optim.converged(res) && println("WARNING: DIDN'T FIND SOL IN D")
+	# res = Optim.optimize(obj_f, first(xmin), first(xmax), GoldenSection())
 
-	x_opt = res.minimizer
+	# !Optim.converged(res) && println("WARNING: DIDN'T FIND SOL IN D")
+
+	# x_opt = res.minimizer
+	# apv = first(x_opt)
+	# vD = -obj_f(x_opt)
+	opt = Opt(:LN_SBPLX, length(xguess))
+	opt.lower_bounds = xmin
+	opt.upper_bounds = xmax
+	# opt.xtol_rel = 1e-16
+	
+	F(x,g) = obj_f(x)
+	opt.max_objective = F
+	maxf, x_opt, ret = NLopt.optimize(opt, xguess)
 	apv = first(x_opt)
-	vD = -obj_f(x_opt)
+	vD = maxf
 
 	ϕ = Dict(:a=>apv, :b=>bpv)
 	
@@ -319,6 +339,7 @@ function vfi!(sr::SOEres; tol::Float64=5e-4, maxiter::Int64=1000, verbose::Bool=
 	t0 = time()
 	while dist > tol && iter < maxiter
 		iter += 1
+		verbose && print("Iteration $iter\n")
 
 		old_q = copy(sr.eq[:qb]);
 		""" Update debt prices (for use as next period prices) """
