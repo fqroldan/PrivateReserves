@@ -155,14 +155,33 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 	# bpv, apv = x_opt
 	# vR = -obj_f(x_opt)
 
-	opt = Opt(:LN_PRAXIS, length(xguess))
+	# opt = Opt(:LN_COBYLA, length(xguess))
+	# opt = Opt(:LD_MMA, length(xguess))
+	opt = Opt(:LD_SLSQP, length(xguess))
+	# opt = Opt(:LN_SBPLX, length(xguess))
 	opt.lower_bounds = xmin
 	opt.upper_bounds = xmax
 	# opt.xtol_rel = 1e-16
 	
-	F(x,g) = obj_f(x)
+	function F(x,g)
+		if length(g) > 0
+			g[:] = ForwardDiff.gradient(obj_f, x)
+		end
+		obj_f(x)
+	end
+
+	constr(x) = (x[1] - state[:b]*1.1)^2
+	function G(x,g,v)
+		if length(g) > 0
+			g[:] = ForwardDiff.gradient(constr, x)
+		end
+		constr(x) - v
+	end
 	opt.max_objective = F
+	opt.maxeval = 500
+	# inequality_constraint!(opt, (x,g) -> G(x,g,1e-6))
 	maxf, x_opt, ret = NLopt.optimize(opt, xguess)
+	# println(ret)
 	bpv, apv = x_opt
 	vR = maxf
 
