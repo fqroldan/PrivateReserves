@@ -34,10 +34,8 @@ function prob_def(sr::SOEres, jζ, jζp, defp)
 	return def_prob
 end
 
-function iterate_q(sr::SOEres, itp_q, itp_def)
+function iterate_q!(new_qa, new_qb, sr::SOEres, itp_q, itp_def)
 	""" One iteration of the debt price """
-	new_qa = zeros(size(sr.eq[:qb]))
-	new_qb = zeros(size(sr.eq[:qb]))
 	ψ, σz, r, ℏ = [sr.pars[key] for key in [:ψ, :σz, :r, :ℏ]]
 
 	Jgrid = agg_grid(sr)
@@ -77,13 +75,15 @@ function iterate_q(sr::SOEres, itp_q, itp_def)
 			new_qb[jv..., jζ] = qnb
 		end
 	end
-	return new_qa, new_qb
 end
 
 function update_q!(sr::SOEres; tol::Float64=1e-6, maxiter::Int64=500, verbose::Bool=true)
 	""" Iterates on the debt price """
 	iter, dist = 0, 1+tol
 	upd_η = 0.75
+
+	new_qa = zeros(size(sr.eq[:qb]))
+	new_qb = zeros(size(sr.eq[:qb]))
 
 	t0 = time()
 	while dist > tol && iter < maxiter
@@ -93,7 +93,7 @@ function update_q!(sr::SOEres; tol::Float64=1e-6, maxiter::Int64=500, verbose::B
 		itp_q   = make_itp(sr, sr.eq[:qb]);
 		itp_def = make_itp(sr, sr.v[:def]);
 
-		new_qa, new_qb = iterate_q(sr, itp_q, itp_def)
+		iterate_q!(new_qa, new_qb, sr, itp_q, itp_def)
 
 		dist = sqrt( sum((new_qb - old_q).^2) / sum(old_q.^2) )
 
@@ -101,7 +101,7 @@ function update_q!(sr::SOEres; tol::Float64=1e-6, maxiter::Int64=500, verbose::B
 		sr.eq[:qa] = new_qa
 	end
 
-	sr.eq[:qa] = ones(size(sr.eq[:qa])) * exp(-sr.pars[:r])
+	# sr.eq[:qa] = ones(size(sr.eq[:qa])) * exp(-sr.pars[:r])
 
 	tT = time()
 	if dist <= tol
