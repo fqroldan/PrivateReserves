@@ -147,7 +147,7 @@ function SOEres(;
 	prob = Dict(:z=>Pz, :ν=>Pν)
 
 	v = Dict(:R=>R, :D=>D, :V=>V, :def=>def)
-	ϕ = Dict(:a=>ap, :b=>bp, :c=>cT)
+	ϕ = Dict(:a=>ap, :b=>bp, :c=>cT, :cT=>cT)
 
 	eq = Dict(:cT=>cT, :cN=>cN, :labor=>hp, :output=>output, :CA=>CA, :qb=>qb, :qa=>qa)
 	# gov = Dict(:repay => repay)

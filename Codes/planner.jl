@@ -8,6 +8,12 @@ function utility(c, γ)
 		return c^(1-γ)/(1-γ)
 	end
 end
+function uT(sr::SOEres, cT, yN)
+	c = CES_aggregator(sr, cT, yN)
+
+	return utility(sr,c)
+end
+uT_prime(sr, cT, yN) = ForwardDiff.derivative(x->uT(sr, x, yN), cT)
 
 function prod_N(sr::SOEres, h, jdef)
 	""" Computes production of nontradables at input h """
@@ -94,7 +100,7 @@ function budget_constraint_agg(sr::SOEres, state, pz, pν, xp, itp_def, itp_q, q
 	yN = prod_N(sr, h, jdef)
 	c = CES_aggregator(sr, cT, yN)
 
-	return c
+	return c, cT
 end
 
 function value(sr::SOEres, state, pz, pν, bp, ap, itp_v, itp_vd, itp_def, itp_q, qav, jdef::Bool)
@@ -108,7 +114,7 @@ function value(sr::SOEres, state, pz, pν, bp, ap, itp_v, itp_vd, itp_def, itp_q
 	# bp = max(bp, minimum(sr.gr[:b]))
 	# bp = min(bp, maximum(sr.gr[:b]))
 
-	c = budget_constraint_agg(sr, state, pz, pν, xp, itp_def, itp_q, qav, jdef)
+	c, _ = budget_constraint_agg(sr, state, pz, pν, xp, itp_def, itp_q, qav, jdef)
 	ut = utility(sr, c)
 
 	vp = 0.0
@@ -127,7 +133,33 @@ function value(sr::SOEres, state, pz, pν, bp, ap, itp_v, itp_vd, itp_def, itp_q
 	return vt
 end
 
-function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q, qav)
+function Euler_eq(sr::SOEres, state, pz, pν, bpv, apv, itp_ucT, itp_def, itp_q, qav, jdef::Bool)
+	cT = budget_constraint_T(sr, state, pz, pν, [bpv, apv], itp_def, itp_q, qav, jdef)
+
+	cT = max(0.0, cT)
+	h = eq_h(sr, cT, jdef)
+	yN = prod_N(sr, h, jdef)
+
+	uT = uT_prime(sr, cT, yN)
+	LHS = uT * qav
+
+	EuT = 0.0
+	for (jzp, zpv) in enumerate(sr.gr[:z]), (jνp, νpv) in enumerate(sr.gr[:ν])
+		prob = pz[jzp] * pν[jνp]
+		if jdef
+			uTp = θ * itp_ucT(bpv, apv, zpv, νpv, 2) + (1-θ) * itp_ucT(bpv, apv, zpv, νpv, 1)
+		else
+			defprob = itp_def(bpv, apv, zpv, νpv)
+			uTp = (1-defprob) * itp_ucT(bpv, apv, zpv, νpv, 2) + defprob * itp_ucT(bpv, apv, zpv, νpv, 1)
+		end
+		EuT += prob * uTp
+	end
+
+	RHS = β * EuT
+	return RHS - LHS
+end
+
+function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, itp_def, itp_q, qav)
 	""" Choose ap ≥ 0, bp ≥ 0 default with prob sr.gov[:repay] """
 	jζ = 2 # IN REPAYMENT
 	jdef = def_state(sr, jζ)
@@ -139,7 +171,7 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 	xmax[1] = max(0.5*xmax[1], min(xmax[1], 2*state[:b]))
 
 	# xguess *= 0.01
-	c_guess = budget_constraint_agg(sr, state, pz, pν, xguess, itp_def, itp_q, qav, jdef)
+	c_guess, _ = budget_constraint_agg(sr, state, pz, pν, xguess, itp_def, itp_q, qav, jdef)
 	if c_guess < 1e-2
 		xguess[1] = state[:b] + 1e-2 * (.5*xmax[1]+.5*xmin[1] - state[:b])
 		xguess[2] = 0.01
@@ -170,7 +202,7 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 		obj_f(x)
 	end
 
-	constr(x) = (x[1] - state[:b]*1.1)^2
+	constr(x) = Euler_eq(sr, state, pz, pν, x[1], x[2], itp_ucT, itp_def, itp_q, qav, jdef)
 	function G(x,g,v)
 		if length(g) > 0
 			g[:] = ForwardDiff.gradient(constr, x)
@@ -187,12 +219,13 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 
 	ϕ = Dict(:a=>apv, :b=>bpv)
 
-	ccv = budget_constraint_agg(sr, state, pz, pν, x_opt, itp_def, itp_q, qav, jdef)
+	ccv, cTv = budget_constraint_agg(sr, state, pz, pν, x_opt, itp_def, itp_q, qav, jdef)
 	ϕ[:c] = ccv
+	ϕ[:cT] = cTv
 	return ϕ, vR
 end
 
-function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q, qav)
+function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, itp_def, itp_q, qav)
 	""" Choose ap between 0 and a, bp = bv, reenter mkts w prob θ """
 	bpv = state[:b]
 	jζ = 1 # IN DEFAULT
@@ -203,7 +236,7 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 	xmin = [minimum(sr.gr[key]) for key in [:a]]
 	xmax = [maximum(sr.gr[key]) for key in [:a]]
 
-	c_guess = budget_constraint_agg(sr, state, pz, pν, [bpv, xguess[1]], itp_def, itp_q, qav, jdef)
+	c_guess, _ = budget_constraint_agg(sr, state, pz, pν, [bpv, xguess[1]], itp_def, itp_q, qav, jdef)
 	if c_guess < 1e-2
 		# xguess[1] = xmax[1] * 0.99
 		xguess[1] = 1e-6
@@ -234,12 +267,13 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_v, itp_vd, itp_def, 
 
 	ϕ = Dict(:a=>apv, :b=>bpv)
 	
-	ccv = budget_constraint_agg(sr, state, pz, pν, [bpv, apv], itp_def, itp_q, qav, jdef)
+	ccv, cTv = budget_constraint_agg(sr, state, pz, pν, [bpv, apv], itp_def, itp_q, qav, jdef)
 	ϕ[:c] = ccv
+	ϕ[:cT] = cTv
 	return ϕ, vD
 end
 
-function solve_optvalue(sr::SOEres, itp_v, itp_vd, itp_def, itp_q)
+function solve_optvalue(sr::SOEres, itp_ucT, itp_v, itp_vd, itp_def, itp_q)
 	""" Loop over states and solve """
 	new_v = Dict(key => similar(val) for (key, val) in sr.v)
 	new_ϕ = Dict(key => similar(val) for (key, val) in sr.ϕ)
@@ -266,8 +300,8 @@ function solve_optvalue(sr::SOEres, itp_v, itp_vd, itp_def, itp_q)
 		end
 
 		""" New xp and values in repayment and default """
-		ϕR, vR = opt_value_R(sr, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q, qaR)
-		ϕD, vD = opt_value_D(sr, guess, state, pz, pν, itp_v, itp_vd, itp_def, itp_q, qaD)
+		ϕR, vR = opt_value_R(sr, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, itp_def, itp_q, qaR)
+		ϕD, vD = opt_value_D(sr, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, itp_def, itp_q, qaD)
 
 		""" Repayment probability as function of values """
 		prob_rep = prob_extreme_value(sr, vR, vD)
@@ -329,12 +363,13 @@ end
 
 function vfi_iter(sr::SOEres)
 	""" Interpolate values and prices to use as next period values """
-	itp_v  = make_itp(sr, sr.v[:V]);
-	itp_vd = make_itp(sr, sr.v[:D]);
+	itp_v   = make_itp(sr, sr.v[:V]);
+	itp_vd  = make_itp(sr, sr.v[:D]);
 	itp_def = make_itp(sr, sr.v[:def]);
-	itp_q  = make_itp(sr, sr.eq[:qb]);
+	itp_q   = make_itp(sr, sr.eq[:qb]);
+	itp_ucT = make_itp(sr, sr.ϕ[:cT]);
 
-	new_v, new_ϕ = solve_optvalue(sr, itp_v, itp_vd, itp_def, itp_q);
+	new_v, new_ϕ = solve_optvalue(sr, itp_ucT, itp_v, itp_vd, itp_def, itp_q);
 	update_def!(sr, new_v)
 	
 	return new_v, new_ϕ
