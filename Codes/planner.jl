@@ -211,7 +211,7 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, 
 	end
 	opt.max_objective = F
 	opt.maxeval = 500
-	# inequality_constraint!(opt, (x,g) -> G(x,g,1e-6))
+	inequality_constraint!(opt, (x,g) -> G(x,g,1e-6))
 	maxf, x_opt, ret = NLopt.optimize(opt, xguess)
 	# println(ret)
 	bpv, apv = x_opt
@@ -251,17 +251,30 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, 
 
 	# !Optim.converged(res) && println("WARNING: DIDN'T FIND SOL IN D")
 
-	# x_opt = res.minimizer
-	# apv = first(x_opt)
-	# vD = -obj_f(x_opt)
-	opt = Opt(:LN_SBPLX, length(xguess))
+	# opt = Opt(:LN_SBPLX, length(xguess))
+	opt = Opt(:LD_SLSQP, length(xguess))
 	opt.lower_bounds = xmin
 	opt.upper_bounds = xmax
-	# opt.xtol_rel = 1e-16
 	
-	F(x,g) = obj_f(x)
+	function F(x,g)
+		if length(g) > 0
+			g[:] = ForwardDiff.gradient(obj_f, x)
+		end
+		obj_f(x)
+	end
+
+	constr(x) = Euler_eq(sr, state, pz, pν, bpv, first(x), itp_ucT, itp_def, itp_q, qav, jdef)
+	function G(x,g,v)
+		if length(g) > 0
+			g[:] = ForwardDiff.gradient(constr, x)
+		end
+		constr(x) - v
+	end
 	opt.max_objective = F
+	opt.maxeval = 500
+	inequality_constraint!(opt, (x,g) -> G(x,g,1e-6))
 	maxf, x_opt, ret = NLopt.optimize(opt, xguess)
+	# println(ret)
 	apv = first(x_opt)
 	vD = maxf
 
@@ -273,11 +286,8 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, 
 	return ϕ, vD
 end
 
-function solve_optvalue(sr::SOEres, itp_ucT, itp_v, itp_vd, itp_def, itp_q)
+function solve_optvalue!(new_v, new_ϕ, sr::SOEres, itp_ucT, itp_v, itp_vd, itp_def, itp_q)
 	""" Loop over states and solve """
-	new_v = Dict(key => similar(val) for (key, val) in sr.v)
-	new_ϕ = Dict(key => similar(val) for (key, val) in sr.ϕ)
-
 	Jgrid = agg_grid(sr);
 	Threads.@threads for js in 1:size(Jgrid,1)
 		jv = Jgrid[js,:]
@@ -319,8 +329,6 @@ function solve_optvalue(sr::SOEres, itp_ucT, itp_v, itp_vd, itp_def, itp_q)
 			end
 		end
 	end
-
-	return new_v, new_ϕ
 end
 
 function prob_extreme_value(sr::SOEres, vR, vD)
@@ -361,7 +369,7 @@ function update_def!(sr::SOEres, new_v=sr.v)
 	end
 end
 
-function vfi_iter(sr::SOEres)
+function vfi_iter!(new_v, new_ϕ, sr::SOEres)
 	""" Interpolate values and prices to use as next period values """
 	itp_v   = make_itp(sr, sr.v[:V]);
 	itp_vd  = make_itp(sr, sr.v[:D]);
@@ -369,10 +377,10 @@ function vfi_iter(sr::SOEres)
 	itp_q   = make_itp(sr, sr.eq[:qb]);
 	itp_ucT = make_itp(sr, sr.ϕ[:cT]);
 
-	new_v, new_ϕ = solve_optvalue(sr, itp_ucT, itp_v, itp_vd, itp_def, itp_q);
+	solve_optvalue!(new_v, new_ϕ, sr, itp_ucT, itp_v, itp_vd, itp_def, itp_q);
 	update_def!(sr, new_v)
 	
-	return new_v, new_ϕ
+	nothing
 end
 
 function update_sr!(y, new_y, upd_η = 1)
@@ -388,8 +396,10 @@ function vfi!(sr::SOEres; tol::Float64=5e-4, maxiter::Int64=1000, verbose::Bool=
 	avg_time = 0.0
 	dist_v, dist_ϕ = zeros(2)
 
-	upd_η = 0.9
+	new_v = Dict(key => similar(val) for (key, val) in sr.v)
+	new_ϕ = Dict(key => similar(val) for (key, val) in sr.ϕ)
 
+	upd_η = 0.9
 	t0 = time()
 	while dist > tol && iter < maxiter
 		iter += 1
@@ -404,7 +414,7 @@ function vfi!(sr::SOEres; tol::Float64=5e-4, maxiter::Int64=1000, verbose::Bool=
 
 		t1 = time()
 		""" Iterate on the value functions """
-		new_v, new_ϕ = vfi_iter(sr);
+		vfi_iter!(new_v, new_ϕ, sr);
 		t = time() - t1
 
 		avg_time = (avg_time * (iter - 1) + t) / iter
@@ -417,15 +427,19 @@ function vfi!(sr::SOEres; tol::Float64=5e-4, maxiter::Int64=1000, verbose::Bool=
 		
 		dist = max(dist_v, dist_ϕ, dist_q)
 
+		for key in keys(sr.ϕ)
+			print("$key: $(norm(new_ϕ[key] - sr.ϕ[key]) / max(1,norm(sr.ϕ[key]))) \n")
+		end
+		# for (key, val) in sr.ϕ
+		# 	print("||$(key)|| = $(norm(val))\n")
+		# end
+
 		update_sr!(sr.v, new_v, upd_η)
 		update_def!(sr) # To update [:def] and [:V] consistently with [:D], [:R]
 		update_sr!(sr.ϕ, new_ϕ, upd_η)
 
 		upd_η = max(upd_η * 0.995, 0.4)
 
-		# for key in keys(sr.v)
-		# 	print("||$(key)|| = $(norm(sr.v[key]))\n")
-		# end
 
 		if verbose && iter % 1 == 0
 			print("After $iter iterations (avg time = $(time_print(avg_time))), d(v,ϕ,q) = $(@sprintf("%0.3g",dist_v)), $(@sprintf("%0.3g",dist_ϕ)), $(@sprintf("%0.3g",dist_q)) \n")
