@@ -211,7 +211,9 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, 
 	end
 	opt.max_objective = F
 	opt.maxeval = 500
-	inequality_constraint!(opt, (x,g) -> G(x,g,1e-6))
+	if sr.opt[:Euler] == true
+		inequality_constraint!(opt, (x,g) -> G(x,g,1e-6))
+	end
 	maxf, x_opt, ret = NLopt.optimize(opt, xguess)
 	# println(ret)
 	bpv, apv = x_opt
@@ -272,7 +274,9 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, 
 	end
 	opt.max_objective = F
 	opt.maxeval = 500
-	inequality_constraint!(opt, (x,g) -> G(x,g,1e-6))
+	if sr.opt[:Euler] == true
+		inequality_constraint!(opt, (x,g) -> G(x,g,1e-6))
+	end
 	maxf, x_opt, ret = NLopt.optimize(opt, xguess)
 	# println(ret)
 	apv = first(x_opt)

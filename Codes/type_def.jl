@@ -73,7 +73,7 @@ function move_grids!(xgrid; xmin=0.0, xmax=1.0)
  	nothing
  end
 
-function SOEres(;
+function SOEres(; Euler = false,
 	β=1.06^-.25,	# Discount factor
 	γ=2.273,		# Risk aversion
 
@@ -142,7 +142,7 @@ function SOEres(;
 
 
 	pars = Dict{Symbol, Float64}(:β=>β, :γ=>γ, :σV=>σV, :δ=>δ, :κ=>δ+exp(r)-1, :πLH=>πLH, :πHL=>πHL, :ψ=>ψ, :ϖT=>ϖ, :ϖN=>1-ϖ, :η=>η, :wbar=>wbar, :r=>r, :ρz=>ρz, :σz=>σz, :α=>α, :θ=>θ, :ℏ=>ℏ, :Δ=>Δ, :ρz=>ρz, :σz=>σz, :μz=>μz)
-	opt = Dict{Symbol, Bool}()
+	opt = Dict{Symbol, Bool}(:Euler => Euler)
 	gr = Dict{Symbol, Vector{Float64}}(:b=>bgrid, :a=>agrid, :z=>zgrid, :ν=>νgrid, :def=>0:1)
 	prob = Dict(:z=>Pz, :ν=>Pν)
 
