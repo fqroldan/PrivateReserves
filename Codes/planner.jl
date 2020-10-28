@@ -431,12 +431,12 @@ function vfi!(sr::SOEres; tol::Float64=5e-4, maxiter::Int64=1000, verbose::Bool=
 		
 		dist = max(dist_v, dist_ϕ, dist_q)
 
-		for key in keys(sr.ϕ)
-			print("$key: $(norm(new_ϕ[key] - sr.ϕ[key]) / max(1,norm(sr.ϕ[key]))) \n")
-		end
-		# for (key, val) in sr.ϕ
-		# 	print("||$(key)|| = $(norm(val))\n")
+		# for key in keys(sr.ϕ)
+		# 	print("$key: $(norm(new_ϕ[key] - sr.ϕ[key]) / max(1,norm(sr.ϕ[key]))) \n")
 		# end
+		for (key, val) in sr.ϕ
+			print("‖$(key)‖ = $(norm(val))\n")
+		end
 
 		update_sr!(sr.v, new_v, upd_η)
 		update_def!(sr) # To update [:def] and [:V] consistently with [:D], [:R]
