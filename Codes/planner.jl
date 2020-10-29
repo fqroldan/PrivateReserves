@@ -134,6 +134,8 @@ function value(sr::SOEres, state, pz, pν, bp, ap, itp_v, itp_vd, itp_def, itp_q
 end
 
 function Euler_eq(sr::SOEres, state, pz, pν, bpv, apv, itp_ucT, itp_def, itp_q, qav, jdef::Bool)
+	β, θ = [sr.pars[key] for key in [:β, :θ]]
+
 	cT = budget_constraint_T(sr, state, pz, pν, [bpv, apv], itp_def, itp_q, qav, jdef)
 
 	cT = max(0.0, cT)
@@ -210,9 +212,13 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, 
 		constr(x) - v
 	end
 	opt.max_objective = F
-	opt.maxeval = 500
+	opt.maxeval = 1000
 	if sr.opt[:Euler] == true
 		inequality_constraint!(opt, (x,g) -> G(x,g,1e-6))
+		# println(G(xguess, [], 0))
+		# if G(xguess, [], 0) > 0
+
+		# end
 	end
 	maxf, x_opt, ret = NLopt.optimize(opt, xguess)
 	# println(ret)
@@ -273,9 +279,13 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, 
 		constr(x) - v
 	end
 	opt.max_objective = F
-	opt.maxeval = 500
+	opt.maxeval = 1000
 	if sr.opt[:Euler] == true
 		inequality_constraint!(opt, (x,g) -> G(x,g,1e-6))
+		# println(G(xguess, [], 0))
+		if G(xguess, [], 0) > 0
+			xguess[1] = 0.0
+		end
 	end
 	maxf, x_opt, ret = NLopt.optimize(opt, xguess)
 	# println(ret)
