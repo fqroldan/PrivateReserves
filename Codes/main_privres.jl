@@ -9,5 +9,5 @@ include("reporting_routines.jl")
 include("plotting_routines.jl")
 include("simul.jl")
 
-println("Constructor sr = SOEres()")
+println("Constructor sr = SOEres(; Euler = false, …)")
 println("Main loop vfi!(sr; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=false)")
