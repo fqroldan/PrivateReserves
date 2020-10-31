@@ -121,9 +121,9 @@ function value(sr::SOEres, state, pz, pν, bp, ap, itp_v, itp_vd, itp_def, itp_q
 	for (jzp, zpv) in enumerate(sr.gr[:z]), (jνp, νpv) in enumerate(sr.gr[:ν])
 		prob = pz[jzp] * pν[jνp]
 		if jdef
-			Vpv = θ * itp_v(xp..., zpv, νpv) + (1-θ) * itp_vd(xp..., zpv, νpv)
+			Vpv = θ * itp_v(bp, ap, zpv, νpv) + (1-θ) * itp_vd(bp, ap, zpv, νpv)
 		else
-			Vpv = itp_v(xp..., zpv, νpv)
+			Vpv = itp_v(bp, ap, zpv, νpv)
 		end
 
 		vp += prob * Vpv
@@ -133,7 +133,15 @@ function value(sr::SOEres, state, pz, pν, bp, ap, itp_v, itp_vd, itp_def, itp_q
 	return vt
 end
 
-function Euler_eq(sr::SOEres, state, pz, pν, bpv, apv, itp_ucT, itp_def, itp_q, qav, jdef::Bool)
+function uTprime_TN(sr::SOEres, cT, jdef)
+	cT = max(0.0, cT)
+	h = eq_h(sr, cT, jdef)
+	yN = prod_N(sr, h, jdef)
+
+	return uT_prime(sr, cT, yN)
+end
+
+function Euler_eq(sr::SOEres, state, pz, pν, bpv, apv, itp_cT, itp_def, itp_q, qav, jdef::Bool)
 	β, θ = [sr.pars[key] for key in [:β, :θ]]
 
 	cT = budget_constraint_T(sr, state, pz, pν, [bpv, apv], itp_def, itp_q, qav, jdef)
@@ -149,10 +157,10 @@ function Euler_eq(sr::SOEres, state, pz, pν, bpv, apv, itp_ucT, itp_def, itp_q,
 	for (jzp, zpv) in enumerate(sr.gr[:z]), (jνp, νpv) in enumerate(sr.gr[:ν])
 		prob = pz[jzp] * pν[jνp]
 		if jdef
-			uTp = θ * itp_ucT(bpv, apv, zpv, νpv, 2) + (1-θ) * itp_ucT(bpv, apv, zpv, νpv, 1)
+			uTp = θ * uTprime_TN(sr, itp_cT(bpv, apv, zpv, νpv, 2), false) + (1-θ) * uTprime_TN(sr, itp_cT(bpv, apv, zpv, νpv, 1), true)
 		else
 			defprob = itp_def(bpv, apv, zpv, νpv)
-			uTp = (1-defprob) * itp_ucT(bpv, apv, zpv, νpv, 2) + defprob * itp_ucT(bpv, apv, zpv, νpv, 1)
+			uTp = (1-defprob) * uTprime_TN(sr, itp_cT(bpv, apv, zpv, νpv, 2), false) + defprob * uTprime_TN(sr, itp_cT(bpv, apv, zpv, νpv, 1), true)
 		end
 		EuT += prob * uTp
 	end
@@ -161,7 +169,7 @@ function Euler_eq(sr::SOEres, state, pz, pν, bpv, apv, itp_ucT, itp_def, itp_q,
 	return RHS - LHS
 end
 
-function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, itp_def, itp_q, qav)
+function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_cT, itp_v, itp_vd, itp_def, itp_q, qav)
 	""" Choose ap ≥ 0, bp ≥ 0 default with prob sr.gov[:repay] """
 	jζ = 2 # IN REPAYMENT
 	jdef = def_state(sr, jζ)
@@ -190,8 +198,8 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, 
 	# vR = -obj_f(x_opt)
 
 	# opt = Opt(:LN_COBYLA, length(xguess))
-	# opt = Opt(:LD_MMA, length(xguess))
-	opt = Opt(:LD_SLSQP, length(xguess))
+	opt = Opt(:LD_CCSAQ, length(xguess))
+	# opt = Opt(:LD_SLSQP, length(xguess))
 	# opt = Opt(:LN_SBPLX, length(xguess))
 	opt.lower_bounds = xmin
 	opt.upper_bounds = xmax
@@ -204,7 +212,8 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, 
 		obj_f(x)
 	end
 
-	constr(x) = Euler_eq(sr, state, pz, pν, x[1], x[2], itp_ucT, itp_def, itp_q, qav, jdef)
+	constr(x) = Euler_eq(sr, state, pz, pν, x[1], x[2], itp_cT, itp_def, itp_q, qav, jdef)
+	# constr(x) = sum(x - xguess)
 	function G(x,g,v)
 		if length(g) > 0
 			g[:] = ForwardDiff.gradient(constr, x)
@@ -212,18 +221,22 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, 
 		constr(x) - v
 	end
 	opt.max_objective = F
-	opt.maxeval = 2000
+	opt.maxeval = 500
 	if sr.opt[:Euler] == true
 		inequality_constraint!(opt, (x,g) -> G(x,g,1e-6))
 		# println(G(xguess, [], 0))
 		if G(xguess, [], 0) > 0
-			xguess[1] = 0.0
+			xguess[1] = xmin[1]
 		end
 	end
 	maxf, x_opt, ret = NLopt.optimize(opt, xguess)
 	# println(ret)
 	bpv, apv = x_opt
 	vR = maxf
+
+	# if G(x_opt, [], 0) > 1e-4
+	# 	println(G(x_opt, [], 0))
+	# end
 
 	ϕ = Dict(:a=>apv, :b=>bpv)
 
@@ -233,7 +246,7 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, 
 	return ϕ, vR
 end
 
-function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, itp_def, itp_q, qav)
+function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_cT, itp_v, itp_vd, itp_def, itp_q, qav)
 	""" Choose ap between 0 and a, bp = bv, reenter mkts w prob θ """
 	bpv = state[:b]
 	jζ = 1 # IN DEFAULT
@@ -260,7 +273,8 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, 
 	# !Optim.converged(res) && println("WARNING: DIDN'T FIND SOL IN D")
 
 	# opt = Opt(:LN_SBPLX, length(xguess))
-	opt = Opt(:LD_SLSQP, length(xguess))
+	opt = Opt(:LD_CCSAQ, length(xguess))
+	# opt = Opt(:LD_SLSQP, length(xguess))
 	opt.lower_bounds = xmin
 	opt.upper_bounds = xmax
 	
@@ -271,7 +285,8 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, 
 		obj_f(x)
 	end
 
-	constr(x) = Euler_eq(sr, state, pz, pν, bpv, first(x), itp_ucT, itp_def, itp_q, qav, jdef)
+	constr(x) = Euler_eq(sr, state, pz, pν, bpv, first(x), itp_cT, itp_def, itp_q, qav, jdef)
+	# constr(x) = sum(x - xguess)
 	function G(x,g,v)
 		if length(g) > 0
 			g[:] = ForwardDiff.gradient(constr, x)
@@ -279,18 +294,22 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, 
 		constr(x) - v
 	end
 	opt.max_objective = F
-	opt.maxeval = 2000
+	opt.maxeval = 500
 	if sr.opt[:Euler] == true
 		inequality_constraint!(opt, (x,g) -> G(x,g,1e-6))
 		# println(G(xguess, [], 0))
 		if G(xguess, [], 0) > 0
-			xguess[1] = 0.0
+			xguess[1] = xmin[1]
 		end
 	end
 	maxf, x_opt, ret = NLopt.optimize(opt, xguess)
 	# println(ret)
 	apv = first(x_opt)
 	vD = maxf
+
+	# if G(x_opt, [], 0) > 1e-4
+	# 	println(G(x_opt, [], 0))
+	# end
 
 	ϕ = Dict(:a=>apv, :b=>bpv)
 	
@@ -300,7 +319,7 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, 
 	return ϕ, vD
 end
 
-function solve_optvalue!(new_v, new_ϕ, sr::SOEres, itp_ucT, itp_v, itp_vd, itp_def, itp_q)
+function solve_optvalue!(new_v, new_ϕ, sr::SOEres, itp_cT, itp_v, itp_vd, itp_def, itp_q)
 	""" Loop over states and solve """
 	Jgrid = agg_grid(sr);
 	Threads.@threads for js in 1:size(Jgrid,1)
@@ -324,8 +343,8 @@ function solve_optvalue!(new_v, new_ϕ, sr::SOEres, itp_ucT, itp_v, itp_vd, itp_
 		end
 
 		""" New xp and values in repayment and default """
-		ϕR, vR = opt_value_R(sr, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, itp_def, itp_q, qaR)
-		ϕD, vD = opt_value_D(sr, guess, state, pz, pν, itp_ucT, itp_v, itp_vd, itp_def, itp_q, qaD)
+		ϕR, vR = opt_value_R(sr, guess, state, pz, pν, itp_cT, itp_v, itp_vd, itp_def, itp_q, qaR)
+		ϕD, vD = opt_value_D(sr, guess, state, pz, pν, itp_cT, itp_v, itp_vd, itp_def, itp_q, qaD)
 
 		""" Repayment probability as function of values """
 		prob_rep = prob_extreme_value(sr, vR, vD)
@@ -389,9 +408,9 @@ function vfi_iter!(new_v, new_ϕ, sr::SOEres)
 	itp_vd  = make_itp(sr, sr.v[:D]);
 	itp_def = make_itp(sr, sr.v[:def]);
 	itp_q   = make_itp(sr, sr.eq[:qb]);
-	itp_ucT = make_itp(sr, sr.ϕ[:cT]);
+	itp_cT = make_itp(sr, sr.ϕ[:cT]);
 
-	solve_optvalue!(new_v, new_ϕ, sr, itp_ucT, itp_v, itp_vd, itp_def, itp_q);
+	solve_optvalue!(new_v, new_ϕ, sr, itp_cT, itp_v, itp_vd, itp_def, itp_q);
 	update_def!(sr, new_v)
 	
 	nothing
