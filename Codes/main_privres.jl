@@ -1,11 +1,11 @@
-print_save("Reserve Accumulation with a Private IIP")
 using QuantEcon, Interpolations, LinearAlgebra, Optim, Dates, Printf, Random, JLD, PlotlyJS, ColorSchemes, JSON, DataFrames, GLM, NLopt, ForwardDiff
+include("reporting_routines.jl")
+print_save("Reserve Accumulation with a Private IIP")
 
 include("type_def.jl")
 include("handle_itps.jl")
 include("comp_eqm.jl")
 include("planner.jl")
-include("reporting_routines.jl")
 include("plotting_routines.jl")
 include("simul.jl")
 
