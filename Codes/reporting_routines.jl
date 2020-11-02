@@ -2,6 +2,7 @@
 if pwd()[1:7] == "/home/q"
 	print_save(s) = print(s)
 else
+	write("../Output/output.txt", "")
 	function print_save(s::String, dir::String = pwd()*"/../Output/")
 		print(s)
 		output = read(dir * "output.txt", String)
