@@ -1,9 +1,14 @@
-function print_save(s::String, dir::String = pwd()*"/../Output/")
-	print(s)
-	output = read(dir * "output.txt", String)
-	write(dir * "output.txt", output * s)
 
-	nothing
+if pwd()[1:7] == "/home/q"
+	print_save(s) = print(s)
+else
+	function print_save(s::String, dir::String = pwd()*"/../Output/")
+		print(s)
+		output = read(dir * "output.txt", String)
+		write(dir * "output.txt", output * s)
+
+		nothing
+	end
 end
 
 show_float(x; digits=10) = @sprintf("%.3g", round(x, digits=digits))
