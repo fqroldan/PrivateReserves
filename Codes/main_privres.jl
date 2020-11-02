@@ -1,4 +1,4 @@
-println("Reserve Accumulation with a Private IIP")
+print_save("Reserve Accumulation with a Private IIP")
 using QuantEcon, Interpolations, LinearAlgebra, Optim, Dates, Printf, Random, JLD, PlotlyJS, ColorSchemes, JSON, DataFrames, GLM, NLopt, ForwardDiff
 
 include("type_def.jl")
@@ -9,5 +9,5 @@ include("reporting_routines.jl")
 include("plotting_routines.jl")
 include("simul.jl")
 
-println("Constructor sr = SOEres(; Euler = false, …)")
-println("Main loop vfi!(sr; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=false)")
+print_save("Constructor sr = SOEres(; Euler = false, …)")
+print_save("Main loop vfi!(sr; tol::Float64=1e-4, maxiter::Int64=500, verbose::Bool=false)")
