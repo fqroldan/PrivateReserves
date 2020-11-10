@@ -198,8 +198,8 @@ function opt_value_R(sr::SOEres, guess, state, pz, pν, itp_cT, itp_v, itp_vd, i
 	# vR = -obj_f(x_opt)
 
 	# opt = Opt(:LN_COBYLA, length(xguess))
-	opt = Opt(:LD_CCSAQ, length(xguess))
-	# opt = Opt(:LD_SLSQP, length(xguess))
+	# opt = Opt(:LD_CCSAQ, length(xguess))
+	opt = Opt(:LD_SLSQP, length(xguess))
 	# opt = Opt(:LN_SBPLX, length(xguess))
 	opt.lower_bounds = xmin
 	opt.upper_bounds = xmax
@@ -273,8 +273,8 @@ function opt_value_D(sr::SOEres, guess, state, pz, pν, itp_cT, itp_v, itp_vd, i
 	# !Optim.converged(res) && println("WARNING: DIDN'T FIND SOL IN D")
 
 	# opt = Opt(:LN_SBPLX, length(xguess))
-	opt = Opt(:LD_CCSAQ, length(xguess))
-	# opt = Opt(:LD_SLSQP, length(xguess))
+	# opt = Opt(:LD_CCSAQ, length(xguess))
+	opt = Opt(:LD_SLSQP, length(xguess))
 	opt.lower_bounds = xmin
 	opt.upper_bounds = xmax
 	
